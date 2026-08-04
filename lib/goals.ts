@@ -1,4 +1,4 @@
-import { Goal, GoalLevel, LEVELS } from "./types";
+import { DAY_CODES, DayCode, Goal, GoalLevel, LEVELS } from "./types";
 
 // Layout + branch-color constants ported 1:1 from the Throughline.html
 // design reference (its embedded `layout()` / `branchOf()` logic), just
@@ -14,18 +14,33 @@ const HUE_PALETTES: Record<string, number[]> = {
   Warm: [42, 22, 92, 330],
 };
 
-export function branchColor(rootIndex: number, palette = "Signal") {
+export function branchHue(rootIndex: number, palette = "Signal") {
   const hues = HUE_PALETTES[palette] ?? HUE_PALETTES.Signal;
-  const hue = hues[rootIndex % hues.length];
-  return `oklch(0.74 0.13 ${hue})`;
+  return hues[rootIndex % hues.length];
+}
+
+export function branchColor(rootIndex: number, palette = "Signal") {
+  return `oklch(0.74 0.13 ${branchHue(rootIndex, palette)})`;
 }
 
 export function childrenOf(goals: Goal[], id: string | null) {
   return goals.filter((g) => g.parent_id === id);
 }
 
+/**
+ * Map/branch roots. Deliberately `level === "yearly"`, not
+ * `parent_id === null` — standalone daily tasks also have a null
+ * parent_id now, and including them here would shift every other
+ * branch's color index and pull them onto the Goal Map, which they're
+ * explicitly not supposed to appear on.
+ */
 export function roots(goals: Goal[]) {
-  return goals.filter((g) => g.parent_id === null);
+  return goals.filter((g) => g.level === "yearly");
+}
+
+/** Goals that should never appear as Goal Map nodes: recurring generators, not real tasks. */
+export function mapVisible(goals: Goal[]): Goal[] {
+  return goals.filter((g) => !g.is_template);
 }
 
 export function findGoal(goals: Goal[], id: string) {
@@ -146,4 +161,131 @@ export function childLevel(level: GoalLevel): GoalLevel | null {
 export function parentLevel(level: GoalLevel): GoalLevel | null {
   const i = LEVELS.indexOf(level);
   return i > 0 ? LEVELS[i - 1] : null;
+}
+
+// --- Scheduling + recurrence -------------------------------------------
+
+/** Local-date ISO string (YYYY-MM-DD) — deliberately not toISOString(), which is UTC and can land on the wrong day. */
+export function toISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function todayISODate(): string {
+  return toISODate(new Date());
+}
+
+const DAY_CODE_BY_JS_INDEX: DayCode[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+/** Whether a template's recurrence_rule is due on the given date. */
+export function matchesRecurrence(rule: string, date: Date): boolean {
+  const code = DAY_CODE_BY_JS_INDEX[date.getDay()];
+  if (rule === "daily") return true;
+  if (rule === "weekdays") return code !== "sat" && code !== "sun";
+  return rule
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .includes(code);
+}
+
+const DAY_LABEL_BY_CODE: Record<string, string> = Object.fromEntries(DAY_CODES.map((d) => [d.code, d.label]));
+
+/** Friendly label for a scheduled_date value: "Today" / "Tomorrow" / "Yesterday" / "Mon, Aug 5". */
+export function formatDateLabel(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((date.getTime() - today.getTime()) / 86400000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays === -1) return "Yesterday";
+  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+export function recurrenceLabel(rule: string | null): string {
+  if (!rule) return "";
+  if (rule === "daily") return "Every day";
+  if (rule === "weekdays") return "Weekdays";
+  return rule
+    .split(",")
+    .map((c) => DAY_LABEL_BY_CODE[c.trim()] ?? c.trim())
+    .join(", ");
+}
+
+// --- History / Insights -------------------------------------------------
+
+export interface DayStats {
+  completed: number;
+  total: number;
+  /** Root index with the most completions that day, among goal-linked tasks — null if none. */
+  dominantRootIndex: number | null;
+}
+
+/**
+ * Per-day completion stats, keyed by scheduled_date. Standalone and
+ * goal-linked tasks both count toward completed/total; only goal-linked
+ * completions vote for a day's dominant branch color.
+ */
+export function aggregateByDate(goals: Goal[]): Record<string, DayStats> {
+  const stats: Record<string, DayStats> = {};
+  const branchTally: Record<string, Record<number, number>> = {};
+
+  for (const g of goals) {
+    if (g.level !== "daily" || g.is_template || !g.scheduled_date) continue;
+    const day = g.scheduled_date;
+    const s = (stats[day] ??= { completed: 0, total: 0, dominantRootIndex: null });
+    s.total += 1;
+    if (g.completed) {
+      s.completed += 1;
+      if (g.parent_id) {
+        const idx = rootIndexOf(goals, g.id);
+        const tally = (branchTally[day] ??= {});
+        tally[idx] = (tally[idx] ?? 0) + 1;
+      }
+    }
+  }
+
+  for (const day of Object.keys(stats)) {
+    const tally = branchTally[day];
+    if (!tally) continue;
+    let best = -1;
+    let bestIdx: number | null = null;
+    for (const [idxStr, count] of Object.entries(tally)) {
+      if (count > best) {
+        best = count;
+        bestIdx = Number(idxStr);
+      }
+    }
+    stats[day].dominantRootIndex = bestIdx;
+  }
+
+  return stats;
+}
+
+/** Sum-based score across a set of dates — NOT an average of daily percentages, which skews toward light days. */
+export function periodScore(stats: Record<string, DayStats>, dates: string[]): { completed: number; total: number } {
+  let completed = 0;
+  let total = 0;
+  for (const d of dates) {
+    const s = stats[d];
+    if (s) {
+      completed += s.completed;
+      total += s.total;
+    }
+  }
+  return { completed, total };
+}
+
+/** ISO dates for the last N days, oldest first, inclusive of today. */
+export function lastNDates(n: number): string[] {
+  const out: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    out.push(toISODate(d));
+  }
+  return out;
 }

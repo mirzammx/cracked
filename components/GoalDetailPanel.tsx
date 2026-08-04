@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import { useGoals } from "./GoalsProvider";
-import { branchColor, childrenOf, findGoal, horizonLabel, progressOf, rootIndexOf } from "@/lib/goals";
+import { branchColor, childrenOf, findGoal, formatDateLabel, horizonLabel, mapVisible, progressOf, rootIndexOf } from "@/lib/goals";
 
 export function GoalDetailPanel() {
-  const { goals, focusId, setFocusId, toggleComplete, openSkip, reconsider } = useGoals();
+  const { goals: allGoals, focusId, setFocusId, toggleComplete, openSkip, reconsider } = useGoals();
+  // Recurring templates aren't map nodes, so they can't show up as
+  // children here either — otherwise a weekly goal's "below" list would
+  // include its own generator alongside the tasks it produces.
+  const goals = mapVisible(allGoals);
   const [busy, setBusy] = useState(false);
 
   const node = focusId ? findGoal(goals, focusId) : undefined;
@@ -43,8 +47,13 @@ export function GoalDetailPanel() {
           <div className="text-xs text-ink-dim">{pct}%</div>
         </div>
       ) : (
-        <div className="mt-3 text-xs" style={{ color }}>
-          {node.completed ? "Done" : node.skipped_reason ? `Skipped — ${node.skipped_reason}` : "Open"}
+        <div className="mt-3 flex items-center gap-2 text-xs">
+          <span style={{ color }}>
+            {node.completed ? "Done" : node.skipped_reason ? `Skipped — ${node.skipped_reason}` : "Open"}
+          </span>
+          {node.scheduled_date ? (
+            <span className="text-ink-ghost">· {formatDateLabel(node.scheduled_date)}</span>
+          ) : null}
         </div>
       )}
 

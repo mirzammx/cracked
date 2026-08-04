@@ -1,8 +1,14 @@
-# Cracked (Phase 1)
+# Cracked
 
 Goals and daily tasks stay visibly connected: every task on the Today
 list traces back through its week → month → quarter → year, and the Goal
 Map renders that whole tree as a connected, colored graph.
+
+**Phase 1:** Goal Map, Today View, Skip flow, New Goal form, magic-link auth.
+**Phase 2 (additive):** task scheduling (`scheduled_date`), standalone
+tasks not linked to any goal, recurring templates, and a History/Insights
+heatmap. See `supabase/migrations/0002_scheduling_templates_history.sql`
+for the schema diff.
 
 ## Stack
 
@@ -34,10 +40,13 @@ login, nothing persists) so the UI is inspectable with zero setup.
 ## Structure
 
 - `supabase/schema.sql` — the one `goals` table (self-referencing tree, RLS by `user_id`).
-- `lib/goals.ts` — progress rollup, tree layout, and branch-color logic shared by the Goal Map.
-- `components/GoalMap.tsx` — the pan/zoom node graph (primary screen).
-- `components/TodayView.tsx`, `components/SkipSheet.tsx`, `components/NewGoalSheet.tsx` — the other three screens from the PRD.
-- `lib/actions.ts` — Supabase mutations (Server Actions); demo mode short-circuits these in `components/GoalsProvider.tsx`.
+- `lib/goals.ts` — progress rollup, tree layout, branch-color, recurrence, and history-aggregation logic shared across screens.
+- `components/GoalMap.tsx` — the pan/zoom node graph (primary screen). Templates never appear here (`mapVisible()` filters them out).
+- `components/TodayView.tsx` — filters by `scheduled_date`, split into "Goal tasks" (breadcrumbed) and "Other tasks" (standalone).
+- `components/SkipSheet.tsx`, `components/NewGoalSheet.tsx` — skip flow and goal/task creation, including the recurring-template toggle.
+- `components/RecurringSheet.tsx` — manage existing templates (edit recurrence, delete); opened via "Recurring →" on Today.
+- `components/HistoryView.tsx` — the Insights heatmap, with click-to-drill-down into any day's task list.
+- `lib/actions.ts` — Supabase mutations (Server Actions), including `ensureTodaysInstances()` (generates due templates' instances, called from `app/(app)/layout.tsx` on every request). Demo mode short-circuits all of this client-side in `components/GoalsProvider.tsx`.
 
 ## Design reference
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Goal, NewGoalInput } from "@/lib/types";
-import { createGoal, reconsiderGoal, setCompleted, skipGoal } from "@/lib/actions";
+import { matchesRecurrence, todayISODate } from "@/lib/goals";
+import { createGoal, deleteTemplate, reconsiderGoal, setCompleted, skipGoal, updateTemplate } from "@/lib/actions";
 
 interface GoalsContextValue {
   goals: Goal[];
@@ -15,14 +16,37 @@ interface GoalsContextValue {
   skipTaskId: string | null;
   openSkip: (id: string) => void;
   closeSkip: () => void;
+  recurringOpen: boolean;
+  openRecurring: () => void;
+  closeRecurring: () => void;
   addGoal: (input: NewGoalInput) => Promise<Goal>;
   toggleComplete: (id: string, completed: boolean) => Promise<void>;
   confirmSkip: (id: string, reason: string, note: string) => Promise<void>;
   reconsider: (id: string) => Promise<void>;
+  editTemplate: (id: string, patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>) => Promise<void>;
+  removeTemplate: (id: string) => Promise<void>;
   justAddedId: string | null;
 }
 
 const GoalsContext = createContext<GoalsContextValue | null>(null);
+
+/** Builds today's instance of a template as a plain client-side row (demo mode only — real mode does this server-side in ensureTodaysInstances). */
+function instantiate(template: Goal, today: string): Goal {
+  return {
+    ...template,
+    id: crypto.randomUUID(),
+    is_template: false,
+    recurrence_rule: null,
+    template_id: template.id,
+    scheduled_date: today,
+    completed: false,
+    completed_at: null,
+    skipped_reason: null,
+    skipped_note: null,
+    skipped_at: null,
+    created_at: new Date().toISOString(),
+  };
+}
 
 export function GoalsProvider({
   initialGoals,
@@ -37,7 +61,28 @@ export function GoalsProvider({
   const [focusId, setFocusId] = useState<string | null>(null);
   const [newGoalOpen, setNewGoalOpen] = useState(false);
   const [skipTaskId, setSkipTaskId] = useState<string | null>(null);
+  const [recurringOpen, setRecurringOpen] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
+
+  // Demo mode has no server to run ensureTodaysInstances() on page load,
+  // so it does the equivalent locally, once, on mount.
+  useEffect(() => {
+    if (!demoMode) return;
+    const today = todayISODate();
+    setGoals((prev) => {
+      const due = prev.filter(
+        (g) => g.is_template && g.recurrence_rule && matchesRecurrence(g.recurrence_rule, new Date())
+      );
+      if (!due.length) return prev;
+      const alreadyGenerated = new Set(
+        prev.filter((g) => g.template_id && g.scheduled_date === today).map((g) => g.template_id)
+      );
+      const toCreate = due.filter((t) => !alreadyGenerated.has(t.id));
+      if (!toCreate.length) return prev;
+      return [...prev, ...toCreate.map((t) => instantiate(t, today))];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoMode]);
 
   const upsert = useCallback((goal: Goal) => {
     setGoals((prev) => {
@@ -60,16 +105,25 @@ export function GoalsProvider({
             why_note: input.why_note.trim(),
             level: input.level,
             completed: false,
+            completed_at: null,
             skipped_reason: null,
             skipped_note: null,
             skipped_at: null,
-            is_today: input.is_today ?? false,
+            scheduled_date: input.scheduled_date ?? null,
+            is_template: input.is_template ?? false,
+            recurrence_rule: input.recurrence_rule ?? null,
+            template_id: null,
             created_at: new Date().toISOString(),
           } as Goal)
         : await createGoal(input);
       upsert(created);
       setNewGoalOpen(false);
-      setFocusId(created.parent_id ?? created.id);
+      // Standalone daily tasks/templates (parent_id null, level "daily")
+      // are never Goal Map nodes — focusing one would dim the whole map
+      // around nothing visible. Only focus a real map node: the new
+      // goal's parent if it has one, or itself if it's a new yearly root.
+      const focusTarget = created.parent_id ?? (created.level === "yearly" ? created.id : null);
+      if (focusTarget) setFocusId(focusTarget);
       setJustAddedId(created.id);
       window.setTimeout(() => setJustAddedId(null), 900);
       return created;
@@ -83,7 +137,14 @@ export function GoalsProvider({
         setGoals((prev) =>
           prev.map((g) =>
             g.id === id
-              ? { ...g, completed, skipped_reason: completed ? null : g.skipped_reason, skipped_note: completed ? null : g.skipped_note, skipped_at: completed ? null : g.skipped_at }
+              ? {
+                  ...g,
+                  completed,
+                  completed_at: completed ? new Date().toISOString() : null,
+                  skipped_reason: completed ? null : g.skipped_reason,
+                  skipped_note: completed ? null : g.skipped_note,
+                  skipped_at: completed ? null : g.skipped_at,
+                }
               : g
           )
         );
@@ -129,6 +190,30 @@ export function GoalsProvider({
     [upsert, demoMode]
   );
 
+  const editTemplate = useCallback(
+    async (id: string, patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>) => {
+      if (demoMode) {
+        setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+        return;
+      }
+      const updated = await updateTemplate(id, patch);
+      upsert(updated);
+    },
+    [upsert, demoMode]
+  );
+
+  const removeTemplate = useCallback(
+    async (id: string) => {
+      if (demoMode) {
+        setGoals((prev) => prev.filter((g) => g.id !== id));
+        return;
+      }
+      await deleteTemplate(id);
+      setGoals((prev) => prev.filter((g) => g.id !== id));
+    },
+    [demoMode]
+  );
+
   const value = useMemo<GoalsContextValue>(
     () => ({
       goals,
@@ -141,13 +226,32 @@ export function GoalsProvider({
       skipTaskId,
       openSkip: (id: string) => setSkipTaskId(id),
       closeSkip: () => setSkipTaskId(null),
+      recurringOpen,
+      openRecurring: () => setRecurringOpen(true),
+      closeRecurring: () => setRecurringOpen(false),
       addGoal,
       toggleComplete,
       confirmSkip,
       reconsider,
+      editTemplate,
+      removeTemplate,
       justAddedId,
     }),
-    [goals, demoMode, focusId, newGoalOpen, skipTaskId, addGoal, toggleComplete, confirmSkip, reconsider, justAddedId]
+    [
+      goals,
+      demoMode,
+      focusId,
+      newGoalOpen,
+      skipTaskId,
+      recurringOpen,
+      addGoal,
+      toggleComplete,
+      confirmSkip,
+      reconsider,
+      editTemplate,
+      removeTemplate,
+      justAddedId,
+    ]
   );
 
   return <GoalsContext.Provider value={value}>{children}</GoalsContext.Provider>;

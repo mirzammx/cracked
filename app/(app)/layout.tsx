@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { ensureTodaysInstances } from "@/lib/actions";
 import { MOCK_GOALS } from "@/lib/mockGoals";
 import { Goal } from "@/lib/types";
 import { GoalsProvider } from "@/components/GoalsProvider";
@@ -7,9 +8,13 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { NewGoalSheet } from "@/components/NewGoalSheet";
 import { SkipSheet } from "@/components/SkipSheet";
+import { RecurringSheet } from "@/components/RecurringSheet";
 
 async function loadGoals(): Promise<Goal[]> {
   if (!hasSupabaseEnv) return MOCK_GOALS;
+  // Idempotent — generates today's instances from due templates if they
+  // don't already exist, before the fetch below picks them up.
+  await ensureTodaysInstances();
   const supabase = createClient();
   const { data } = await supabase.from("goals").select("*").order("created_at", { ascending: true });
   return (data ?? []) as Goal[];
@@ -30,6 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
       <NewGoalSheet />
       <SkipSheet />
+      <RecurringSheet />
     </GoalsProvider>
   );
 }

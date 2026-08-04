@@ -8,6 +8,7 @@ import {
   descendantsOf,
   horizonLabel,
   layoutGoals,
+  mapVisible,
   progressOf,
   rootIndexOf,
 } from "@/lib/goals";
@@ -23,7 +24,9 @@ const DEPTH_OPTIONS = [
 ];
 
 export function GoalMap() {
-  const { goals, focusId, setFocusId, justAddedId } = useGoals();
+  const { goals: allGoals, focusId, setFocusId, justAddedId } = useGoals();
+  // Recurring templates are generators, not real tasks — never map nodes.
+  const goals = mapVisible(allGoals);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
 
