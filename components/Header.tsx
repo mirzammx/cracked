@@ -1,0 +1,59 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { branchColor, roots } from "@/lib/goals";
+import { useGoals } from "./GoalsProvider";
+
+export function Header() {
+  const { goals, focusId, setFocusId, demoMode } = useGoals();
+  const router = useRouter();
+  const rs = roots(goals);
+
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+
+  return (
+    <div className="flex-none px-[22px] pt-5 pb-3 flex items-center justify-between gap-4">
+      <div className="flex items-baseline gap-[9px]">
+        <div className="font-serif text-[25px] tracking-[-0.01em] text-ink-2">Cracked</div>
+        <div className="text-[10px] tracking-[0.14em] uppercase text-ink-ghost">{today}</div>
+        {demoMode ? (
+          <div className="text-[10px] tracking-[0.1em] uppercase text-amber/80 border border-amber/30 rounded-full px-2 py-[3px]">
+            Demo data
+          </div>
+        ) : null}
+      </div>
+      <div className="flex gap-[7px] flex-wrap justify-end">
+        {rs.map((r, i) => {
+          const color = branchColor(i);
+          const active = focusId === r.id;
+          const short = r.title.length > 16 ? r.title.slice(0, 15).replace(/\s+\S*$/, "") + "…" : r.title;
+          return (
+            <button
+              key={r.id}
+              onClick={() => {
+                setFocusId(active ? null : r.id);
+                router.push("/map");
+              }}
+              className="flex items-center gap-[7px] rounded-full px-[11px] py-[6px] text-[11px] transition-all"
+              style={{
+                border: `1px solid ${active ? color : "#2e2e25"}`,
+                background: active ? "rgba(255,255,255,0.06)" : "#1c1c16",
+                color: active ? "#f2efe8" : "#8f8a7a",
+              }}
+            >
+              <span
+                className="w-[7px] h-[7px] rounded-full"
+                style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+              />
+              {short}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
