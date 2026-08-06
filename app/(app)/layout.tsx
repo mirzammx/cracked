@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { NewGoalSheet } from "@/components/NewGoalSheet";
 import { SkipSheet } from "@/components/SkipSheet";
 import { RecurringSheet } from "@/components/RecurringSheet";
+import { StickyNote } from "@/components/StickyNote";
 
 async function loadGoals(): Promise<Goal[]> {
   if (!hasSupabaseEnv) return MOCK_GOALS;
@@ -36,6 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <NewGoalSheet />
       <SkipSheet />
       <RecurringSheet />
+      <StickyNote />
     </GoalsProvider>
   );
 }

@@ -9,9 +9,10 @@ export default function LoginPage({
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="font-serif text-3xl text-ink-2 mb-2">Cracked</div>
-        <p className="text-sm text-ink-dim mb-8 leading-relaxed">
+        <p className="text-sm text-ink-dim mb-2 leading-relaxed">
           One line and you&apos;re in. We&apos;ll email you a sign-in link.
         </p>
+        <p className="text-xs text-ink-ghost mb-8">Invite-only for now.</p>
 
         {searchParams.sent ? (
           <div className="rounded-xl border border-border bg-card p-4 text-sm text-ink-muted leading-relaxed">

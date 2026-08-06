@@ -1,13 +1,12 @@
--- Cracked — schema (Phase 1 + Phase 2: scheduling, standalone tasks,
--- recurring templates, completion history).
--- Single self-referencing `goals` table. Every row carries user_id so
--- multi-user support needs no migration, even though this app only
--- ever has one user per account.
+-- Cracked — schema (Phase 1: goal tree. Phase 2: scheduling, standalone
+-- tasks, recurring templates, completion history. Phase 3: invite-only
+-- signup, onboarding example data).
+-- Single self-referencing `goals` table, RLS'd to user_id, so multi-user
+-- support needs no migration.
 --
--- If you already ran the Phase 1 version of this file against a live
--- project, don't re-run this one — apply
--- supabase/migrations/0002_scheduling_templates_history.sql instead.
--- This file is the full state, for fresh projects only.
+-- If you already ran an earlier version of this file against a live
+-- project, don't re-run it — apply the migrations/000N files you're
+-- missing instead. This file is the full state, for fresh projects only.
 
 create extension if not exists "pgcrypto";
 
@@ -46,6 +45,10 @@ create table if not exists public.goals (
   -- that already exist — this column is only for idempotent "has today's
   -- instance already been generated" checks, not live inheritance.
   template_id uuid references public.goals(id) on delete set null,
+  -- Seeded into every new account on first sign-in (see the app's auth
+  -- callback), tagged so the owner can tell their own goals apart from
+  -- the walkthrough and delete it once they've got the idea.
+  is_example boolean not null default false,
   created_at timestamptz not null default now(),
 
   -- A root is either a yearly goal (the top of a goal branch) or a
@@ -160,3 +163,61 @@ create policy "goals are only updatable by their owner"
 create policy "goals are only deletable by their owner"
   on public.goals for delete
   using (auth.uid() = user_id);
+
+-- ── Invite list ──────────────────────────────────────────────────────
+-- RLS is enabled with NO policies at all, on purpose — nobody (anon or
+-- authenticated) can select/insert/update/delete this table directly;
+-- it's managed by hand from the SQL Editor or Table Editor (which uses
+-- the postgres role and bypasses RLS). The only sanctioned read path is
+-- the security-definer function below, which returns a boolean, never
+-- the list itself.
+create table public.allowed_emails (
+  email text primary key,
+  note text,
+  created_at timestamptz not null default now()
+);
+alter table public.allowed_emails enable row level security;
+
+create or replace function public.is_email_allowed(check_email text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.allowed_emails where lower(email) = lower(check_email)
+  );
+$$;
+
+-- Callable pre-signup, before there's a session — the app's login form
+-- checks this first and shows "not invited yet" without ever calling
+-- Supabase Auth for a disallowed email.
+grant execute on function public.is_email_allowed(text) to anon, authenticated;
+
+-- ── Enforcement at the database level ────────────────────────────────
+-- The app-side check above is for a clean error message; this trigger is
+-- what actually stops account creation, in case anything ever calls the
+-- Supabase Auth API directly instead of going through the app. A blocked
+-- insert here reaches the client as a generic "Database error saving new
+-- user" (Supabase's GoTrue doesn't forward custom exception text from
+-- auth.users triggers) — that's fine, it's a backstop, not the primary
+-- UX path.
+create or replace function public.enforce_invite_only()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_email_allowed(new.email) then
+    raise exception 'not_invited';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_invite_only on auth.users;
+create trigger enforce_invite_only
+  before insert on auth.users
+  for each row execute function public.enforce_invite_only();

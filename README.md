@@ -5,10 +5,12 @@ list traces back through its week → month → quarter → year, and the Goal
 Map renders that whole tree as a connected, colored graph.
 
 **Phase 1:** Goal Map, Today View, Skip flow, New Goal form, magic-link auth.
-**Phase 2 (additive):** task scheduling (`scheduled_date`), standalone
-tasks not linked to any goal, recurring templates, and a History/Insights
-heatmap. See `supabase/migrations/0002_scheduling_templates_history.sql`
-for the schema diff.
+**Phase 2:** task scheduling (`scheduled_date`), standalone tasks,
+recurring templates, History/Insights heatmap.
+**Phase 3:** invite-only signup + RLS-enforced multi-user auth, onboarding
+example data on first sign-in, sticky-note widget. See
+`supabase/migrations/0002_scheduling_templates_history.sql` and
+`0003_invite_only_and_onboarding.sql` for the schema diffs.
 
 ## Stack
 
@@ -28,14 +30,27 @@ login, nothing persists) so the UI is inspectable with zero setup.
 
 1. Create a project at supabase.com.
 2. Run `supabase/schema.sql` against it (SQL Editor, or `supabase db push`).
-3. Sign up one user through the app once auth is live, then run
-   `supabase/seed.sql` to seed that user's goals (or start empty and use
-   the New Goal form).
+3. Invite yourself (and anyone else) before trying to sign in — signup is
+   invite-only, enforced both app-side (friendly message) and by a
+   trigger on `auth.users` (real enforcement):
+   ```sql
+   insert into public.allowed_emails (email, note) values ('you@example.com', 'me');
+   ```
 4. Copy `.env.local.example` to `.env.local` and fill in
    `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` from
    Project Settings → API.
-5. Restart `npm run dev` — the app switches from demo mode to real
-   Supabase Auth + data automatically (see `lib/env.ts`).
+5. **Before inviting real people:** configure custom SMTP under Project
+   Settings → Auth → SMTP Settings. Supabase's built-in email sender is
+   aggressively rate-limited and not meant for production traffic —
+   magic links will start failing once more than a person or two tries
+   to sign in.
+6. Restart `npm run dev` — the app switches from demo mode to real
+   Supabase Auth + data automatically (see `lib/env.ts`). Each new
+   account gets a small tagged (`is_example = true`) walkthrough goal
+   tree on first sign-in — see `lib/exampleGoals.ts`.
+7. `supabase/seed.sql` is optional and separate from the above — it's
+   the old single-account demo tree (now also used as `lib/mockGoals.ts`
+   for zero-setup demo mode), not part of the onboarding flow.
 
 ## Structure
 
@@ -47,6 +62,9 @@ login, nothing persists) so the UI is inspectable with zero setup.
 - `components/RecurringSheet.tsx` — manage existing templates (edit recurrence, delete); opened via "Recurring →" on Today.
 - `components/HistoryView.tsx` — the Insights heatmap, with click-to-drill-down into any day's task list.
 - `lib/actions.ts` — Supabase mutations (Server Actions), including `ensureTodaysInstances()` (generates due templates' instances, called from `app/(app)/layout.tsx` on every request). Demo mode short-circuits all of this client-side in `components/GoalsProvider.tsx`.
+- `components/StickyNote.tsx` — persistent top-right widget showing today's tasks (goal + standalone combined); collapsed by default (localStorage-remembered) so it doesn't fight the Goal Map's own detail panel for the same corner.
+- `app/login/actions.ts` — checks `is_email_allowed()` before ever calling Supabase Auth; `supabase/schema.sql`'s `enforce_invite_only` trigger on `auth.users` is the real backstop.
+- `app/auth/callback/route.ts` — on first sign-in (`user_metadata.onboarded` unset), seeds `lib/exampleGoals.ts`'s tree and marks the account onboarded.
 
 ## Design reference
 

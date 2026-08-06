@@ -21,7 +21,7 @@ export function GoalDetailPanel() {
   const isDaily = node.level === "daily";
 
   return (
-    <div className="absolute right-4 top-4 bottom-4 w-full max-w-[300px] bg-card/95 border border-border-strong rounded-2xl backdrop-blur p-4 overflow-auto animate-fadeIn">
+    <div className="absolute right-4 bottom-4 w-full max-w-[300px] max-h-[calc(100%-32px)] bg-card/95 border border-border-strong rounded-2xl backdrop-blur p-4 overflow-auto animate-fadeIn">
       <div className="flex items-start justify-between gap-2">
         <div className="text-[9px] tracking-[0.12em] uppercase text-ink-ghost">{horizonLabel(node.level)}</div>
         <button onClick={() => setFocusId(null)} className="text-ink-dim text-xs">
