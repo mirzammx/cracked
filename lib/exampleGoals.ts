@@ -1,78 +1,64 @@
 import { randomUUID } from "crypto";
 import { toISODate } from "./goals";
+import {
+  DEMO_HISTORY_PARENT_KEY,
+  DEMO_HISTORY_TEMPLATE_KEY,
+  DEMO_HISTORY_TITLE,
+  DEMO_HISTORY_WHY,
+  DEMO_TREE,
+  buildDemoHistory,
+} from "./demoTree";
+
+function offsetDate(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return toISODate(d);
+}
 
 /**
  * Seeded once into every new account (see app/auth/callback/route.ts),
  * tagged is_example so the owner can tell it apart from their own goals
- * and delete it once they've got the idea. A full yearly→quarterly→
- * monthly→weekly→daily chain, not a shortcut — the whole point is
- * demonstrating the throughline from a daily task up to a yearly goal,
- * which a partial chain wouldn't show.
+ * and delete it once they've got the idea. Built from the same DEMO_TREE
+ * that demo mode uses (lib/mockGoals.ts) — this is the real, full demo
+ * data (three branches, standalone tasks, recurring templates, and two
+ * backdated weeks of history for the Insights heatmap), not a shrunken
+ * stand-in, so it actually shows what using the app looks like.
  */
 export function buildExampleGoals(userId: string) {
-  const yearlyId = randomUUID();
-  const quarterlyId = randomUUID();
-  const monthlyId = randomUUID();
-  const weeklyId = randomUUID();
+  const ids = new Map<string, string>();
+  for (const n of DEMO_TREE) ids.set(n.key, randomUUID());
 
-  const today = toISODate(new Date());
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterday = toISODate(yesterdayDate);
+  const treeRows = DEMO_TREE.map((n) => ({
+    id: ids.get(n.key)!,
+    user_id: userId,
+    parent_id: n.parentKey ? ids.get(n.parentKey)! : null,
+    level: n.level,
+    title: `Example: ${n.title}`,
+    why_note: n.why_note,
+    is_example: true,
+    scheduled_date: n.scheduleOffset !== undefined ? offsetDate(n.scheduleOffset) : null,
+    completed: n.completed ?? false,
+    is_template: n.isTemplate ?? false,
+    recurrence_rule: n.recurrenceRule ?? null,
+  }));
 
-  const base = { user_id: userId, is_example: true };
-
-  return [
-    {
-      ...base,
-      id: yearlyId,
-      parent_id: null,
-      level: "yearly" as const,
-      title: "Example: Run a 5K",
-      why_note: 'A concrete finish line beats a vague intention to "get in shape."',
-    },
-    {
-      ...base,
-      id: quarterlyId,
-      parent_id: yearlyId,
-      level: "quarterly" as const,
-      title: "Example: Build a running habit",
-      why_note: "Consistency for one quarter proves it's sustainable before chasing distance.",
-    },
-    {
-      ...base,
-      id: monthlyId,
-      parent_id: quarterlyId,
-      level: "monthly" as const,
-      title: "Example: Run three times a week",
-      why_note: "Frequency first — pace and distance can wait.",
-    },
-    {
-      ...base,
-      id: weeklyId,
-      parent_id: monthlyId,
-      level: "weekly" as const,
-      title: "Example: This week's runs",
-      why_note: "Three short runs, nothing heroic.",
-    },
-    {
-      ...base,
+  const historyRows = buildDemoHistory().map((h) => {
+    const iso = offsetDate(h.offset);
+    return {
       id: randomUUID(),
-      parent_id: weeklyId,
+      user_id: userId,
+      parent_id: ids.get(DEMO_HISTORY_PARENT_KEY)!,
       level: "daily" as const,
-      title: "Example: 20-minute easy run",
-      why_note: "This is the task that shows up in Today View — try checking it off.",
-      scheduled_date: today,
-    },
-    {
-      ...base,
-      id: randomUUID(),
-      parent_id: weeklyId,
-      level: "daily" as const,
-      title: "Example: Stretch after yesterday's run",
-      why_note: "This is what a finished task looks like — see it reflected on the Insights heatmap.",
-      scheduled_date: yesterday,
-      completed: true,
-    },
-  ];
+      title: `Example: ${DEMO_HISTORY_TITLE}`,
+      why_note: DEMO_HISTORY_WHY,
+      is_example: true,
+      scheduled_date: iso,
+      template_id: ids.get(DEMO_HISTORY_TEMPLATE_KEY)!,
+      completed: h.completed,
+      skipped_reason: h.skipped ? "Ran out of time" : null,
+      skipped_at: h.skipped ? `${iso}T20:00:00.000Z` : null,
+    };
+  });
+
+  return [...treeRows, ...historyRows];
 }
