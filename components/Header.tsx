@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { branchColor, roots } from "@/lib/goals";
 import { useGoals } from "./GoalsProvider";
+import { Logo } from "./Logo";
 
 export function Header() {
   const { goals, focusId, setFocusId, demoMode } = useGoals();
@@ -18,7 +19,10 @@ export function Header() {
   return (
     <div className="flex-none px-[22px] pt-5 pb-3 flex items-center justify-between gap-4">
       <div className="flex items-baseline gap-[9px]">
-        <div className="font-serif text-[25px] tracking-[-0.01em] text-ink-2">Cracked</div>
+        <div className="flex items-center gap-[7px]">
+          <Logo size={22} />
+          <div className="font-serif text-[25px] tracking-[-0.01em] text-ink-2">Cracked</div>
+        </div>
         <div className="text-[10px] tracking-[0.14em] uppercase text-ink-ghost">{today}</div>
         {demoMode ? (
           <div className="text-[10px] tracking-[0.1em] uppercase text-amber/80 border border-amber/30 rounded-full px-2 py-[3px]">
