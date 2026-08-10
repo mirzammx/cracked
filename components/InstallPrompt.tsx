@@ -72,8 +72,9 @@ export function InstallPrompt() {
       <div className="flex-1 min-w-0 text-[12px] text-ink-dim leading-relaxed text-pretty">
         {platform === "ios-safari" ? (
           <>
-            Install Cracked: tap <span className="text-ink">Share</span> →{" "}
-            <span className="text-ink">Add to Home Screen</span>.
+            This can&apos;t be tapped from here — in <span className="text-ink">Safari&apos;s own toolbar</span>{" "}
+            (not this page), tap the <span className="text-ink">Share</span> icon, then choose{" "}
+            <span className="text-ink">Add to Home Screen</span> to install Cracked.
           </>
         ) : platform === "ios-other" ? (
           <>
