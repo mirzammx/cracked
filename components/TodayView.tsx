@@ -104,7 +104,7 @@ function TeachingMoment({ goals, task, onOpenMap }: { goals: Goal[]; task: Goal;
         ) : (
           "its goal"
         )}{" "}
-        up above — that's the whole idea.
+        up above — that&apos;s the whole idea.
       </div>
     </div>
   );
