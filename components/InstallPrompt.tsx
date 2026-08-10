@@ -63,6 +63,15 @@ export function InstallPrompt() {
     dismiss();
   }
 
+  /** Best-effort only: x-safari-https:// is an undocumented iOS scheme
+   * that hints the link should open in Safari specifically, not the
+   * default browser. Apple doesn't guarantee it — it can silently stop
+   * working in a future iOS version — so the manual Share-icon
+   * instructions stay as the reliable fallback either way. */
+  function tryOpenInSafari() {
+    window.location.href = window.location.href.replace(/^https?:/, (m) => `x-safari-${m}`);
+  }
+
   if (installed || dismissed) return null;
   if (!deferredPrompt && platform === "standard") return null;
 
@@ -78,8 +87,9 @@ export function InstallPrompt() {
           </>
         ) : platform === "ios-other" ? (
           <>
-            Open this page in <span className="text-ink">Safari</span> to install Cracked — other browsers on
-            iPhone/iPad can&apos;t add it to your home screen.
+            Chrome/Firefox/Edge can&apos;t install this on iPhone — tap{" "}
+            <span className="text-ink">Open in Safari</span> to try automatically, or manually copy this
+            page&apos;s link into Safari if that doesn&apos;t work.
           </>
         ) : (
           "Install Cracked for a faster, full-screen experience."
@@ -88,6 +98,10 @@ export function InstallPrompt() {
       {platform === "standard" ? (
         <button onClick={install} className="flex-none text-xs rounded-full bg-ink-2 text-canvas px-3 py-1.5">
           Install
+        </button>
+      ) : platform === "ios-other" ? (
+        <button onClick={tryOpenInSafari} className="flex-none text-xs rounded-full bg-ink-2 text-canvas px-3 py-1.5">
+          Open in Safari
         </button>
       ) : null}
       <button onClick={dismiss} aria-label="Dismiss install prompt" className="flex-none text-ink-faint text-sm px-1">
