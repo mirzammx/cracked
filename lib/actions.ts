@@ -59,6 +59,22 @@ export async function setCompleted(id: string, completed: boolean): Promise<Goal
   return data as Goal;
 }
 
+/** Attaches a standalone task to a goal (or detaches it back to standalone). Level itself never changes. */
+export async function relinkGoal(id: string, parentId: string | null): Promise<Goal> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("goals")
+    .update({ parent_id: parentId })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/map");
+  revalidatePath("/today");
+  return data as Goal;
+}
+
 export async function skipGoal(id: string, reason: string, note: string): Promise<Goal> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase

@@ -1,47 +1,58 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Caveat } from "next/font/google";
 import { useGoals } from "./GoalsProvider";
 import { branchColor, rootIndexOf, todayISODate } from "@/lib/goals";
 
-const caveat = Caveat({ subsets: ["latin"], weight: ["600", "700"] });
-
 const STORAGE_KEY = "cracked:stickyNoteExpanded";
-const PAPER = "#f3dd8c";
-const PAPER_DARK = "#4a3a1a";
+const SCRATCH_COLOR = "#767263"; // ink-faint
 
 function ScratchLine({ active }: { active: boolean }) {
   return (
     <svg
-      className="absolute left-0 top-1/2 w-full h-[10px] pointer-events-none"
+      className="absolute left-0 top-1/2 w-full h-[2px] pointer-events-none"
       style={{ transform: "translateY(-50%)" }}
-      viewBox="0 0 100 10"
+      viewBox="0 0 100 2"
       preserveAspectRatio="none"
     >
-      <path
-        d="M1 5 Q 10 1, 20 5 T 40 5 T 60 5 T 80 5 T 99 5"
-        fill="none"
-        stroke={PAPER_DARK}
-        strokeWidth={1.8}
+      <line
+        x1="1"
+        y1="1"
+        x2="99"
+        y2="1"
+        stroke={SCRATCH_COLOR}
+        strokeWidth={1.5}
         strokeLinecap="round"
         pathLength={1}
         style={{
           strokeDasharray: 1,
           strokeDashoffset: active ? 0 : 1,
-          transition: "stroke-dashoffset 480ms cubic-bezier(0.3,0.7,0.3,1)",
+          transition: "stroke-dashoffset 420ms cubic-bezier(0.3,0.7,0.3,1)",
         }}
       />
     </svg>
   );
 }
 
+function ExpandIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 3h6v6" />
+      <path d="M9 21H3v-6" />
+      <path d="M21 3l-7 7" />
+      <path d="M3 21l7-7" />
+    </svg>
+  );
+}
+
 export function StickyNote() {
-  const { goals, toggleComplete } = useGoals();
+  const { goals, toggleComplete, justCompletedId, addGoal, openNewGoal } = useGoals();
   // Starts collapsed (matches the pre-mount server render) and only opens
   // if a prior session explicitly expanded it — avoids fighting with the
   // Goal Map's own detail panel for the same corner by default.
   const [expanded, setExpanded] = useState(false);
+  const [quickTitle, setQuickTitle] = useState("");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     setExpanded(window.localStorage.getItem(STORAGE_KEY) === "1");
@@ -59,18 +70,35 @@ export function StickyNote() {
   const due = goals.filter((g) => g.level === "daily" && !g.is_template && g.scheduled_date === today);
   const doneCount = due.filter((g) => g.completed).length;
 
+  // Instant capture: title, Enter, done — no dialog. Everything else
+  // (goal, schedule, recurrence) defaults silently; the expand button next
+  // to the field is the deliberate opt-in path to change any of that.
+  async function quickAdd() {
+    const title = quickTitle.trim();
+    if (!title || adding) return;
+    setQuickTitle("");
+    setAdding(true);
+    try {
+      await addGoal({
+        title,
+        why_note: "",
+        level: "daily",
+        parent_id: null,
+        scheduled_date: today,
+        is_template: false,
+      });
+    } finally {
+      setAdding(false);
+    }
+  }
+
   if (!expanded) {
     return (
       <button
         onClick={toggle}
-        aria-label="Open today's sticky note"
-        className={`${caveat.className} fixed top-20 right-4 z-40 w-12 h-12 rounded-[6px] flex items-center justify-center text-[15px] font-bold`}
-        style={{
-          background: PAPER,
-          color: PAPER_DARK,
-          transform: "rotate(-4deg)",
-          boxShadow: "0 8px 16px -8px rgba(0,0,0,0.6)",
-        }}
+        aria-label="Open today's tasks"
+        className="fixed top-20 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center text-[13px] font-medium bg-card border border-border-strong text-ink"
+        style={{ boxShadow: "0 8px 20px -10px rgba(0,0,0,0.6)" }}
       >
         {doneCount}/{due.length}
       </button>
@@ -79,37 +107,71 @@ export function StickyNote() {
 
   return (
     <div
-      className={`${caveat.className} fixed top-20 right-4 z-40 w-[230px] rounded-[3px] px-4 pb-4 pt-7`}
-      style={{ background: PAPER, color: PAPER_DARK, transform: "rotate(-2deg)", boxShadow: "0 16px 32px -14px rgba(0,0,0,0.6)" }}
+      className="fixed top-20 right-4 z-40 w-[260px] rounded-2xl bg-card/95 border border-border-strong backdrop-blur px-4 py-4 animate-fadeIn"
+      style={{ boxShadow: "0 16px 32px -14px rgba(0,0,0,0.6)" }}
     >
-      <div
-        className="absolute -top-[10px] left-1/2 w-16 h-5"
-        style={{
-          background: "rgba(255,255,255,0.5)",
-          transform: "translateX(-50%) rotate(-3deg)",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-        }}
-      />
-      <button
-        onClick={toggle}
-        aria-label="Minimize sticky note"
-        className="absolute top-[6px] right-[9px] text-[13px] leading-none opacity-60 hover:opacity-100"
-      >
-        ✕
-      </button>
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-serif text-lg text-ink-2">Today</div>
+        <button onClick={toggle} aria-label="Minimize" className="text-ink-faint text-sm leading-none hover:text-ink-dim">
+          ✕
+        </button>
+      </div>
 
-      <div className="text-[22px] font-bold leading-none mb-2">Today</div>
+      <div className="flex items-center gap-[6px] mb-3">
+        <input
+          autoFocus
+          value={quickTitle}
+          onChange={(e) => setQuickTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") quickAdd();
+          }}
+          placeholder="Add a task…"
+          className="flex-1 min-w-0 h-9 rounded-lg border border-border-strong bg-canvas px-3 text-[13px] text-ink outline-none"
+        />
+        <button
+          onClick={() => openNewGoal("daily")}
+          aria-label="Customize new task"
+          title="Customize…"
+          className="flex-none w-9 h-9 rounded-lg border border-border-strong text-ink-faint flex items-center justify-center hover:text-ink-dim hover:border-border"
+        >
+          <ExpandIcon />
+        </button>
+      </div>
 
       {due.length === 0 ? (
-        <div className="text-[16px] opacity-70">nothing today ✎</div>
+        <div className="text-[13px] text-ink-dim">Nothing today.</div>
       ) : (
-        <div className="flex flex-col gap-[7px]">
+        <div className="flex flex-col gap-[9px]">
           {due.map((g) => {
-            const dotColor = g.parent_id ? branchColor(rootIndexOf(goals, g.id)) : PAPER_DARK;
+            const dotColor = g.parent_id ? branchColor(rootIndexOf(goals, g.id)) : "#5b584c";
+            const pulsing = g.id === justCompletedId;
             return (
-              <button key={g.id} onClick={() => toggleComplete(g.id, !g.completed)} className="text-left flex items-start gap-[7px]">
-                <span className="w-[7px] h-[7px] rounded-full mt-[8px] flex-none" style={{ background: dotColor, opacity: g.parent_id ? 1 : 0.5 }} />
-                <span className="relative inline-block text-[16px] leading-[1.15]" style={{ opacity: g.completed ? 0.6 : 1 }}>
+              <button key={g.id} onClick={() => toggleComplete(g.id, !g.completed)} className="text-left flex items-start gap-[9px]">
+                <span className="flex-none flex flex-col items-center mt-[6px]">
+                  <span
+                    className="w-[6px] h-[6px] rounded-full"
+                    style={{
+                      background: dotColor,
+                      color: dotColor,
+                      opacity: g.parent_id ? 1 : 0.6,
+                      animation: pulsing ? "chainPulse 900ms ease" : undefined,
+                    }}
+                  />
+                  {/* Standalone task — a short dashed tail instead of a solid dot, echoing Today's dangling thread. */}
+                  {!g.parent_id ? (
+                    <span
+                      className="w-[1.5px] h-[8px] mt-[2px]"
+                      style={{
+                        background: "repeating-linear-gradient(to bottom, #5b584c 0, #5b584c 2px, transparent 2px, transparent 4px)",
+                        opacity: 0.5,
+                      }}
+                    />
+                  ) : null}
+                </span>
+                <span
+                  className="relative inline-block text-[13px] leading-[1.3]"
+                  style={{ color: g.completed ? "#8f8a7a" : "#f2efe8" }}
+                >
                   {g.title}
                   <ScratchLine active={g.completed} />
                 </span>

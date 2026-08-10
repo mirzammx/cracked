@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
 import { useGoals } from "./GoalsProvider";
 import { horizonLabel, parentLevel, todayISODate } from "@/lib/goals";
 import { DAY_CODES, DayCode, GoalLevel, LEVEL_LABEL, LEVELS, RECURRENCE_PRESETS, RecurrencePreset } from "@/lib/types";
 
 export function NewGoalSheet() {
-  const { goals, newGoalOpen, closeNewGoal, addGoal } = useGoals();
+  const { goals, newGoalOpen, newGoalDefaultLevel, closeNewGoal, addGoal, openQuickStart } = useGoals();
   const [level, setLevel] = useState<GoalLevel>("quarterly");
   const [parentId, setParentId] = useState<string>("");
   const [title, setTitle] = useState("");
@@ -20,6 +20,9 @@ export function NewGoalSheet() {
 
   const pLevel = parentLevel(level);
   const isDaily = level === "daily";
+  // Required where drift actually happens (yearly/quarterly); optional at
+  // the more granular levels so fast capture isn't taxed for a reason.
+  const whyRequired = level === "yearly" || level === "quarterly";
   const parentOptions = useMemo(
     () => (pLevel ? goals.filter((g) => g.level === pLevel) : []),
     [goals, pLevel]
@@ -54,13 +57,27 @@ export function NewGoalSheet() {
     setSaving(false);
   }
 
+  // The sheet is a single persistent instance (toggled, never remounted),
+  // so each open needs to re-apply the caller's requested horizon — e.g.
+  // the "+" button defaults to Daily from Today, Quarterly elsewhere.
+  useEffect(() => {
+    if (newGoalOpen) {
+      pickLevel(newGoalDefaultLevel);
+      setScheduledDate(todayISODate());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newGoalOpen, newGoalDefaultLevel]);
+
+  // "Draw it into the map" is only true when something actually lands on
+  // the map — a standalone daily task doesn't, so the button should say so.
+  const standaloneDaily = isDaily && !parentId;
   const parentRequired = level !== "yearly" && level !== "daily";
   const recurrenceRule = recurrenceMode === "custom" ? Array.from(customDays).join(",") : recurrenceMode;
   const recurrenceReady = recurrenceMode !== "custom" || customDays.size > 0;
 
   const canSave =
     title.trim().length > 0 &&
-    why.trim().length > 0 &&
+    (!whyRequired || why.trim().length > 0) &&
     (!parentRequired || !!parentId) &&
     (!isTemplate || recurrenceReady);
 
@@ -133,9 +150,25 @@ export function NewGoalSheet() {
               ))
             )}
           </select>
+          {isDaily && !parentId ? (
+            <div className="mt-2 text-[11px] text-ink-fade leading-relaxed">
+              Every task can trace up to a goal — link one now, or later from Today.
+            </div>
+          ) : null}
         </>
       ) : (
-        <div className="mt-[18px] text-sm text-ink-dim">A new anchor on the map — no parent needed.</div>
+        <>
+          <div className="mt-[18px] text-sm text-ink-dim">A new anchor on the map — no parent needed.</div>
+          <button
+            onClick={() => {
+              closeNewGoal();
+              openQuickStart();
+            }}
+            className="mt-2 text-[11px] text-ink-faint underline decoration-dotted underline-offset-4"
+          >
+            ✨ Or use the 60-second quick start →
+          </button>
+        </>
       )}
 
       {isDaily ? (
@@ -237,14 +270,14 @@ export function NewGoalSheet() {
 
       <div className="mt-[18px] flex items-baseline justify-between mb-[9px]">
         <div className="text-[10px] tracking-[0.12em] uppercase text-ink-ghost">Why this matters</div>
-        <div className="text-[10px] text-ink-fade">required</div>
+        <div className="text-[10px] text-ink-fade">{whyRequired ? "required" : "optional"}</div>
       </div>
       <input
         value={why}
         onChange={(e) => setWhy(e.target.value)}
         placeholder="One line you'll believe on a bad day"
         className="w-full h-[46px] rounded-xl border bg-canvas px-[13px] text-sm text-ink outline-none"
-        style={{ borderColor: why.trim() ? "#33332a" : "#4d4433" }}
+        style={{ borderColor: !whyRequired || why.trim() ? "#33332a" : "#4d4433" }}
       />
 
       <button
@@ -252,7 +285,7 @@ export function NewGoalSheet() {
         disabled={!canSave || saving}
         className="mt-5 w-full h-[52px] rounded-full bg-ink-2 text-canvas text-[15px] disabled:opacity-40"
       >
-        {saving ? "Drawing…" : "Draw it into the map"}
+        {saving ? (standaloneDaily ? "Adding…" : "Drawing…") : standaloneDaily ? "Add to Today" : "Draw it into the map"}
       </button>
     </Sheet>
   );

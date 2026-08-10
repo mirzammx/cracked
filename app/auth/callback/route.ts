@@ -5,7 +5,7 @@ import { buildExampleGoals } from "@/lib/exampleGoals";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/map";
+  const next = searchParams.get("next") ?? "/today";
 
   // Supabase appends these instead of `code` when the link itself failed
   // (expired, already used, or the redirect wasn't on the allow-list) —

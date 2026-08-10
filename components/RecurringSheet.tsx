@@ -31,7 +31,8 @@ function TemplateRow({ template, goals }: { template: Goal; goals: Goal[] }) {
   }
 
   const rule = mode === "custom" ? Array.from(customDays).join(",") : mode;
-  const canSave = title.trim() && why.trim() && (mode !== "custom" || customDays.size > 0);
+  // Templates are always daily tasks, so "why" is optional here too.
+  const canSave = title.trim() && (mode !== "custom" || customDays.size > 0);
 
   async function save() {
     if (!canSave) return;

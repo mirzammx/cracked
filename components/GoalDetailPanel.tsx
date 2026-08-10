@@ -57,7 +57,9 @@ export function GoalDetailPanel() {
         </div>
       )}
 
-      <div className="mt-4 text-[13px] italic leading-relaxed text-ink-dim text-pretty">{node.why_note}</div>
+      {node.why_note ? (
+        <div className="mt-4 text-[13px] italic leading-relaxed text-ink-dim text-pretty">{node.why_note}</div>
+      ) : null}
 
       {isDaily ? (
         <div className="mt-5">

@@ -9,7 +9,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { NewGoalSheet } from "@/components/NewGoalSheet";
 import { SkipSheet } from "@/components/SkipSheet";
 import { RecurringSheet } from "@/components/RecurringSheet";
+import { QuickStartSheet } from "@/components/QuickStartSheet";
 import { StickyNote } from "@/components/StickyNote";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 async function loadGoals(): Promise<Goal[]> {
   if (!hasSupabaseEnv) return MOCK_GOALS;
@@ -31,12 +33,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         style={{ background: "radial-gradient(120% 90% at 50% 0%, #22221a 0%, #14140f 70%)" }}
       >
         <Header />
+        <InstallPrompt />
         {children}
         <BottomNav />
       </div>
       <NewGoalSheet />
       <SkipSheet />
       <RecurringSheet />
+      <QuickStartSheet />
       <StickyNote />
     </GoalsProvider>
   );

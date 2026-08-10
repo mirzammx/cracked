@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Goal, NewGoalInput } from "@/lib/types";
+import { Goal, GoalLevel, NewGoalInput } from "@/lib/types";
 import { matchesRecurrence, todayISODate } from "@/lib/goals";
-import { createGoal, deleteTemplate, reconsiderGoal, setCompleted, skipGoal, updateTemplate } from "@/lib/actions";
+import { createGoal, deleteTemplate, reconsiderGoal, relinkGoal, setCompleted, skipGoal, updateTemplate } from "@/lib/actions";
 
 interface GoalsContextValue {
   goals: Goal[];
@@ -11,7 +11,8 @@ interface GoalsContextValue {
   focusId: string | null;
   setFocusId: (id: string | null) => void;
   newGoalOpen: boolean;
-  openNewGoal: () => void;
+  newGoalDefaultLevel: GoalLevel;
+  openNewGoal: (defaultLevel?: GoalLevel) => void;
   closeNewGoal: () => void;
   skipTaskId: string | null;
   openSkip: (id: string) => void;
@@ -19,13 +20,18 @@ interface GoalsContextValue {
   recurringOpen: boolean;
   openRecurring: () => void;
   closeRecurring: () => void;
+  quickStartOpen: boolean;
+  openQuickStart: () => void;
+  closeQuickStart: () => void;
   addGoal: (input: NewGoalInput) => Promise<Goal>;
   toggleComplete: (id: string, completed: boolean) => Promise<void>;
   confirmSkip: (id: string, reason: string, note: string) => Promise<void>;
   reconsider: (id: string) => Promise<void>;
+  relink: (id: string, parentId: string | null) => Promise<void>;
   editTemplate: (id: string, patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>) => Promise<void>;
   removeTemplate: (id: string) => Promise<void>;
   justAddedId: string | null;
+  justCompletedId: string | null;
 }
 
 const GoalsContext = createContext<GoalsContextValue | null>(null);
@@ -60,9 +66,12 @@ export function GoalsProvider({
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [newGoalOpen, setNewGoalOpen] = useState(false);
+  const [newGoalDefaultLevel, setNewGoalDefaultLevel] = useState<GoalLevel>("quarterly");
   const [skipTaskId, setSkipTaskId] = useState<string | null>(null);
   const [recurringOpen, setRecurringOpen] = useState(false);
+  const [quickStartOpen, setQuickStartOpen] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
+  const [justCompletedId, setJustCompletedId] = useState<string | null>(null);
 
   // Demo mode has no server to run ensureTodaysInstances() on page load,
   // so it does the equivalent locally, once, on mount.
@@ -113,6 +122,7 @@ export function GoalsProvider({
             is_template: input.is_template ?? false,
             recurrence_rule: input.recurrence_rule ?? null,
             template_id: null,
+            is_example: false,
             created_at: new Date().toISOString(),
           } as Goal)
         : await createGoal(input);
@@ -133,6 +143,11 @@ export function GoalsProvider({
 
   const toggleComplete = useCallback(
     async (id: string, completed: boolean) => {
+      // Only a *linked* task completing (not un-completing, not standalone)
+      // earns the chain-lighting celebration — captured before the mutation
+      // since a demo-mode local update wouldn't otherwise hand back parent_id.
+      const shouldCelebrate = completed && !!goals.find((g) => g.id === id)?.parent_id;
+
       if (demoMode) {
         setGoals((prev) =>
           prev.map((g) =>
@@ -148,9 +163,26 @@ export function GoalsProvider({
               : g
           )
         );
+      } else {
+        const updated = await setCompleted(id, completed);
+        upsert(updated);
+      }
+
+      if (shouldCelebrate) {
+        setJustCompletedId(id);
+        window.setTimeout(() => setJustCompletedId(null), 1400);
+      }
+    },
+    [upsert, demoMode, goals]
+  );
+
+  const relink = useCallback(
+    async (id: string, parentId: string | null) => {
+      if (demoMode) {
+        setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, parent_id: parentId } : g)));
         return;
       }
-      const updated = await setCompleted(id, completed);
+      const updated = await relinkGoal(id, parentId);
       upsert(updated);
     },
     [upsert, demoMode]
@@ -221,7 +253,11 @@ export function GoalsProvider({
       focusId,
       setFocusId,
       newGoalOpen,
-      openNewGoal: () => setNewGoalOpen(true),
+      newGoalDefaultLevel,
+      openNewGoal: (defaultLevel: GoalLevel = "quarterly") => {
+        setNewGoalDefaultLevel(defaultLevel);
+        setNewGoalOpen(true);
+      },
       closeNewGoal: () => setNewGoalOpen(false),
       skipTaskId,
       openSkip: (id: string) => setSkipTaskId(id),
@@ -229,28 +265,37 @@ export function GoalsProvider({
       recurringOpen,
       openRecurring: () => setRecurringOpen(true),
       closeRecurring: () => setRecurringOpen(false),
+      quickStartOpen,
+      openQuickStart: () => setQuickStartOpen(true),
+      closeQuickStart: () => setQuickStartOpen(false),
       addGoal,
       toggleComplete,
       confirmSkip,
       reconsider,
+      relink,
       editTemplate,
       removeTemplate,
       justAddedId,
+      justCompletedId,
     }),
     [
       goals,
       demoMode,
       focusId,
       newGoalOpen,
+      newGoalDefaultLevel,
       skipTaskId,
       recurringOpen,
+      quickStartOpen,
       addGoal,
       toggleComplete,
       confirmSkip,
       reconsider,
+      relink,
       editTemplate,
       removeTemplate,
       justAddedId,
+      justCompletedId,
     ]
   );
 

@@ -17,7 +17,9 @@ create table if not exists public.goals (
   user_id uuid not null references auth.users(id) on delete cascade,
   parent_id uuid references public.goals(id) on delete cascade,
   title text not null check (char_length(trim(title)) > 0),
-  why_note text not null check (char_length(trim(why_note)) > 0),
+  -- Required only where drift actually happens (yearly/quarterly); optional
+  -- at the more granular levels so fast capture isn't taxed for a reason.
+  why_note text not null check (level not in ('yearly', 'quarterly') or char_length(trim(why_note)) > 0),
   level goal_level not null,
   completed boolean not null default false,
   -- Set/cleared by the goals_set_completed_at trigger below, not app

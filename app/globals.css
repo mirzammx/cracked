@@ -60,3 +60,20 @@ a:hover {
     opacity: 1;
   }
 }
+/* A linked task's completion "climbing" its chain toward the root goal —
+   driven by GoalsProvider's justCompletedId, reused on every completion
+   (not just onboarding). Staggered per chain segment via animation-delay. */
+@keyframes chainPulse {
+  0% {
+    opacity: 0.4;
+    filter: drop-shadow(0 0 0px currentColor);
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+  100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 2px currentColor);
+  }
+}

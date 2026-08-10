@@ -47,7 +47,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isLoginRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/map";
+    url.pathname = "/today";
     url.search = "";
     return NextResponse.redirect(url);
   }

@@ -29,6 +29,10 @@ function toGoal(partial: Partial<Goal> & Pick<Goal, "id" | "parent_id" | "level"
     is_template: false,
     recurrence_rule: null,
     template_id: null,
+    // Demo mode simulates an established account, not a fresh signup — its
+    // seed data (real user_id "demo-user") is deliberately never tagged as
+    // the onboarding walkthrough, unlike lib/exampleGoals.ts's rows.
+    is_example: false,
     ...partial,
     completed_at: partial.completed ? NOW : null,
   };

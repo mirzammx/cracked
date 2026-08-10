@@ -21,6 +21,8 @@ export interface Goal {
   recurrence_rule: string | null;
   /** Which template generated this instance, if any. */
   template_id: string | null;
+  /** Seeded onboarding walkthrough data, not the user's own goal. */
+  is_example: boolean;
   created_at: string;
 }
 

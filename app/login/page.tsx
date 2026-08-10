@@ -20,7 +20,7 @@ export default function LoginPage({
           </div>
         ) : (
           <form action={login} className="flex flex-col gap-3">
-            <input type="hidden" name="next" value={searchParams.next ?? "/map"} />
+            <input type="hidden" name="next" value={searchParams.next ?? "/today"} />
             <input
               name="email"
               type="email"
