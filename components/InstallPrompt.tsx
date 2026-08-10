@@ -9,14 +9,19 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+type Platform = "standard" | "ios-safari" | "ios-other";
+
 /** Chrome/Android suppress their own install UI once a page calls
  * preventDefault() on beforeinstallprompt — this is the app's own
- * dismissible replacement. iOS never fires that event at all, so it gets
- * static "Share → Add to Home Screen" instructions instead. Dismissal is
- * remembered so it never nags on repeat visits. */
+ * dismissible replacement. iOS never fires that event at all, and only
+ * Safari there can actually install a PWA — Chrome/Firefox/Edge on iOS
+ * are WebKit wrappers Apple never grants that capability to, so those
+ * get told to switch browsers rather than shown instructions that would
+ * just create a plain bookmark. Dismissal is remembered so it never nags
+ * on repeat visits. */
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOSSafari, setIsIOSSafari] = useState(false);
+  const [platform, setPlatform] = useState<Platform>("standard");
   const [dismissed, setDismissed] = useState(true);
   const [installed, setInstalled] = useState(true);
 
@@ -28,8 +33,12 @@ export function InstallPrompt() {
 
     const ua = window.navigator.userAgent;
     const iOS = /iPad|iPhone|iPod/.test(ua) && !("MSStream" in window);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
-    setIsIOSSafari(iOS && isSafari);
+    // Chrome/Firefox/Edge on iOS identify as CriOS/FxiOS/EdgiOS in their UA
+    // (never the literal word "chrome") but their UA string still ends in
+    // "...Safari/<version>" for WebKit-compatibility reasons — so those
+    // have to be excluded explicitly, not just "chrome|android".
+    const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(ua);
+    setPlatform(iOS ? (isSafari ? "ios-safari" : "ios-other") : "standard");
 
     setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1");
 
@@ -55,22 +64,27 @@ export function InstallPrompt() {
   }
 
   if (installed || dismissed) return null;
-  if (!deferredPrompt && !isIOSSafari) return null;
+  if (!deferredPrompt && platform === "standard") return null;
 
   return (
     <div className="flex-none mx-[22px] mt-3 rounded-xl border border-border-strong bg-card px-4 py-3 flex items-center gap-3">
       <span className="text-[18px] leading-none flex-none">📲</span>
       <div className="flex-1 min-w-0 text-[12px] text-ink-dim leading-relaxed text-pretty">
-        {isIOSSafari ? (
+        {platform === "ios-safari" ? (
           <>
             Install Cracked: tap <span className="text-ink">Share</span> →{" "}
             <span className="text-ink">Add to Home Screen</span>.
+          </>
+        ) : platform === "ios-other" ? (
+          <>
+            Open this page in <span className="text-ink">Safari</span> to install Cracked — other browsers on
+            iPhone/iPad can&apos;t add it to your home screen.
           </>
         ) : (
           "Install Cracked for a faster, full-screen experience."
         )}
       </div>
-      {!isIOSSafari ? (
+      {platform === "standard" ? (
         <button onClick={install} className="flex-none text-xs rounded-full bg-ink-2 text-canvas px-3 py-1.5">
           Install
         </button>
