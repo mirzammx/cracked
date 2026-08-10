@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { branchColor, roots } from "@/lib/goals";
+import { signOut } from "@/lib/actions";
 import { useGoals } from "./GoalsProvider";
 import { Logo } from "./Logo";
 
@@ -57,6 +58,17 @@ export function Header() {
             </button>
           );
         })}
+        {!demoMode ? (
+          <button
+            onClick={async () => {
+              await signOut();
+              router.push("/login");
+            }}
+            className="flex-none self-center text-[11px] text-ink-faint underline decoration-dotted underline-offset-4"
+          >
+            Sign out
+          </button>
+        ) : null}
       </div>
     </div>
   );
