@@ -19,19 +19,22 @@ export function Header() {
 
   return (
     <div className="flex-none px-[22px] pt-5 pb-3 flex items-center justify-between gap-4">
-      <div className="flex items-baseline gap-[9px]">
+      <div className="flex-none flex items-baseline gap-[9px] whitespace-nowrap">
         <div className="flex items-center gap-[7px]">
           <Logo size={22} />
           <div className="font-serif text-[25px] tracking-[-0.01em] text-ink-2">Cracked</div>
         </div>
-        <div className="text-[10px] tracking-[0.14em] uppercase text-ink-ghost">{today}</div>
+        <div className="text-[10px] tracking-[0.14em] uppercase text-ink-ghost whitespace-nowrap">{today}</div>
         {demoMode ? (
-          <div className="text-[10px] tracking-[0.1em] uppercase text-amber/80 border border-amber/30 rounded-full px-2 py-[3px]">
+          <div className="text-[10px] tracking-[0.1em] uppercase text-amber/80 border border-amber/30 rounded-full px-2 py-[3px] whitespace-nowrap">
             Demo data
           </div>
         ) : null}
       </div>
-      <div className="flex gap-[7px] flex-wrap justify-end">
+      {/* overflow-x-auto (not flex-wrap) keeps this a single, predictable-height
+          row even with many root goals — StickyNote's fixed top offset assumes
+          the header never grows taller than one line. */}
+      <div className="flex-1 min-w-0 flex gap-[7px] overflow-x-auto">
         {rs.map((r, i) => {
           const color = branchColor(i);
           const active = focusId === r.id;
@@ -43,7 +46,7 @@ export function Header() {
                 setFocusId(active ? null : r.id);
                 router.push("/map");
               }}
-              className="flex items-center gap-[7px] rounded-full px-[11px] py-[6px] text-[11px] transition-all"
+              className="flex-none whitespace-nowrap flex items-center gap-[7px] rounded-full px-[11px] py-[6px] text-[11px] transition-all"
               style={{
                 border: `1px solid ${active ? color : "#2e2e25"}`,
                 background: active ? "rgba(255,255,255,0.06)" : "#1c1c16",
