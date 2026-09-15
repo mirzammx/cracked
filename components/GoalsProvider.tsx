@@ -3,7 +3,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Goal, GoalLevel, NewGoalInput } from "@/lib/types";
 import { matchesRecurrence, todayISODate } from "@/lib/goals";
-import { createGoal, deleteTemplate, reconsiderGoal, relinkGoal, setCompleted, skipGoal, updateTemplate } from "@/lib/actions";
+import {
+  createGoal,
+  deleteTemplate,
+  reconsiderGoal,
+  relinkGoal,
+  setCompleted,
+  skipGoal,
+  updateGoal as updateGoalAction,
+  updateTemplate,
+} from "@/lib/actions";
 
 interface GoalsContextValue {
   goals: Goal[];
@@ -28,6 +37,7 @@ interface GoalsContextValue {
   confirmSkip: (id: string, reason: string, note: string) => Promise<void>;
   reconsider: (id: string) => Promise<void>;
   relink: (id: string, parentId: string | null) => Promise<void>;
+  updateGoal: (id: string, patch: Partial<Pick<Goal, "title" | "why_note">>) => Promise<void>;
   editTemplate: (id: string, patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>) => Promise<void>;
   removeTemplate: (id: string) => Promise<void>;
   justAddedId: string | null;
@@ -222,6 +232,18 @@ export function GoalsProvider({
     [upsert, demoMode]
   );
 
+  const updateGoal = useCallback(
+    async (id: string, patch: Partial<Pick<Goal, "title" | "why_note">>) => {
+      if (demoMode) {
+        setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+        return;
+      }
+      const updated = await updateGoalAction(id, patch);
+      upsert(updated);
+    },
+    [upsert, demoMode]
+  );
+
   const editTemplate = useCallback(
     async (id: string, patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>) => {
       if (demoMode) {
@@ -273,6 +295,7 @@ export function GoalsProvider({
       confirmSkip,
       reconsider,
       relink,
+      updateGoal,
       editTemplate,
       removeTemplate,
       justAddedId,
@@ -292,6 +315,7 @@ export function GoalsProvider({
       confirmSkip,
       reconsider,
       relink,
+      updateGoal,
       editTemplate,
       removeTemplate,
       justAddedId,

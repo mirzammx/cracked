@@ -75,6 +75,22 @@ export async function relinkGoal(id: string, parentId: string | null): Promise<G
   return data as Goal;
 }
 
+/** Edits any goal/task's own title and why-note — the "edit a card on the
+ * map" action. Unlike updateTemplate below, this isn't restricted to
+ * template rows; it's the general-purpose edit for any node. */
+export async function updateGoal(
+  id: string,
+  patch: Partial<Pick<Goal, "title" | "why_note">>
+): Promise<Goal> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.from("goals").update(patch).eq("id", id).select().single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/map");
+  revalidatePath("/today");
+  return data as Goal;
+}
+
 export async function skipGoal(id: string, reason: string, note: string): Promise<Goal> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
