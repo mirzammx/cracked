@@ -31,14 +31,15 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginRoute = request.nextUrl.pathname.startsWith("/login");
-  // /auth/callback is what CREATES the session (exchangeCodeForSession,
-  // called in its route handler) — requiring a session to reach it is a
-  // chicken-and-egg bug: middleware would bounce every magic-link click
-  // back to /login before the route handler ever ran, carrying the
-  // (now stranded) ?code= along for the ride.
-  const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/callback");
+  // /auth/* routes are what CREATE a session (exchangeCodeForSession,
+  // called in their route handlers — /auth/callback for OAuth,
+  // /auth/reset-password for the password-recovery link) — requiring a
+  // session to reach them is a chicken-and-egg bug: middleware would
+  // bounce every one of those clicks back to /login before the route
+  // handler ever ran, carrying the (now stranded) ?code= along for the ride.
+  const isAuthRoute = request.nextUrl.pathname.startsWith("/auth/");
 
-  if (!user && !isLoginRoute && !isAuthCallback) {
+  if (!user && !isLoginRoute && !isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", request.nextUrl.pathname);

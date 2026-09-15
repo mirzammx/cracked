@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildExampleGoals } from "@/lib/exampleGoals";
+import { ensureOnboarded } from "@/lib/onboarding";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -28,19 +28,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error?.message ?? "Sign-in failed.")}`);
   }
 
-  const user = data.user;
-
-  if (!user.user_metadata?.onboarded) {
-    // Belt-and-suspenders: also check for zero existing goals, in case a
-    // previous run seeded successfully but the metadata write below
-    // didn't land — avoids seeding the example tree twice.
-    const { count } = await supabase.from("goals").select("id", { count: "exact", head: true }).eq("user_id", user.id);
-
-    if (!count) {
-      await supabase.from("goals").insert(buildExampleGoals(user.id));
-    }
-    await supabase.auth.updateUser({ data: { onboarded: true } });
-  }
+  await ensureOnboarded(supabase, data.user);
 
   return NextResponse.redirect(`${origin}${next}`);
 }
