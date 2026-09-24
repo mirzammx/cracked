@@ -91,6 +91,9 @@ export async function updateGoal(
   return data as Goal;
 }
 
+// Skipping/reconsidering never touches `completed`, so it can't change any
+// progress number progressOf() computes — the Map has nothing to
+// revalidate for either of these, only Today (and History) show skip state.
 export async function skipGoal(id: string, reason: string, note: string): Promise<Goal> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
@@ -106,7 +109,6 @@ export async function skipGoal(id: string, reason: string, note: string): Promis
     .single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/map");
   revalidatePath("/today");
   return data as Goal;
 }
@@ -122,14 +124,18 @@ export async function reconsiderGoal(id: string): Promise<Goal> {
     .single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/map");
   revalidatePath("/today");
   return data as Goal;
 }
 
 /** Edits a template's own fields. Already-generated instances copied their
  * title/why_note/parent_id at creation time, so this can never touch them —
- * it only changes what future instances will look like. */
+ * it only changes what future instances will look like. Templates are
+ * never map-visible (mapVisible() filters them out) and never appear in
+ * Today directly (only their generated instances do, as separate rows
+ * this doesn't touch) — so nothing on either route needs revalidating;
+ * RecurringSheet's own list is already correct via the client-side
+ * upsert() in GoalsProvider. */
 export async function updateTemplate(
   id: string,
   patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>
@@ -144,19 +150,16 @@ export async function updateTemplate(
     .single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/map");
-  revalidatePath("/today");
   return data as Goal;
 }
 
 /** Past instances aren't cascade-deleted (template_id -> on delete set null in
- * the schema) — they just stop pointing at a template and keep their history. */
+ * the schema) — they just stop pointing at a template and keep their history.
+ * Same no-revalidation reasoning as updateTemplate above. */
 export async function deleteTemplate(id: string): Promise<void> {
   const { supabase } = await requireUser();
   const { error } = await supabase.from("goals").delete().eq("id", id).eq("is_template", true);
   if (error) throw new Error(error.message);
-  revalidatePath("/map");
-  revalidatePath("/today");
 }
 
 /**

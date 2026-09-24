@@ -217,6 +217,12 @@ export function recurrenceLabel(rule: string | null): string {
 
 // --- History / Insights -------------------------------------------------
 
+/** How many weeks of daily-task history the History view displays — also
+ * the window the initial goals fetch (app/(app)/layout.tsx) keeps in sync,
+ * so old daily instances that can never be shown aren't pulled on every
+ * page load. */
+export const HISTORY_WEEKS = 20;
+
 export interface DayStats {
   completed: number;
   total: number;

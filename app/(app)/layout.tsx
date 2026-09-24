@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { ensureTodaysInstances } from "@/lib/actions";
 import { MOCK_GOALS } from "@/lib/mockGoals";
+import { HISTORY_WEEKS, toISODate } from "@/lib/goals";
 import { Goal } from "@/lib/types";
 import { GoalsProvider } from "@/components/GoalsProvider";
 import { Header } from "@/components/Header";
@@ -19,7 +20,16 @@ async function loadGoals(): Promise<Goal[]> {
   // don't already exist, before the fetch below picks them up.
   await ensureTodaysInstances();
   const supabase = createClient();
-  const { data } = await supabase.from("goals").select("*").order("created_at", { ascending: true });
+  // Goal-tree nodes (level != "daily") and templates always carry a null
+  // scheduled_date and are needed in full for the Map/RecurringSheet — only
+  // daily instances are date-scoped, to the same window History can ever
+  // display, so years of past checkmarks aren't fetched on every page load.
+  const cutoff = toISODate(new Date(Date.now() - HISTORY_WEEKS * 7 * 86400000));
+  const { data } = await supabase
+    .from("goals")
+    .select("*")
+    .or(`level.neq.daily,is_template.eq.true,scheduled_date.gte.${cutoff}`)
+    .order("created_at", { ascending: true });
   return (data ?? []) as Goal[];
 }
 

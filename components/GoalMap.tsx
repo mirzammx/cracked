@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   NODE_WIDTH_BY_DEPTH,
   branchColor,
@@ -26,7 +26,10 @@ const DEPTH_OPTIONS = [
 export function GoalMap() {
   const { goals: allGoals, focusId, setFocusId, justAddedId } = useGoals();
   // Recurring templates are generators, not real tasks — never map nodes.
-  const goals = mapVisible(allGoals);
+  // Memoized because `allGoals` gets a new array reference on every
+  // GoalsProvider update, and this filter/rebuild shouldn't repeat on
+  // every pan/zoom frame (see layout/nodeInfo/edges below — same reason).
+  const goals = useMemo(() => mapVisible(allGoals), [allGoals]);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
 
@@ -35,7 +38,24 @@ export function GoalMap() {
   const [tx, setTx] = useState(24);
   const [ty, setTy] = useState(0);
 
-  const layout = layoutGoals(goals, maxDepth);
+  // Panning/zooming only touch scale/tx/ty, not goals — layout only needs
+  // to be recomputed when the data or depth actually changes, not on every
+  // pointermove/wheel event during a drag or zoom gesture.
+  const layout = useMemo(() => layoutGoals(goals, maxDepth), [goals, maxDepth]);
+
+  // O(1) lookups instead of goals.find(...) (O(n)) inside the edges/node
+  // loops below, and progressOf/rootIndexOf (both recursive tree walks)
+  // computed once per node per data change instead of twice per node
+  // per render.
+  const goalsById = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
+  const nodeInfo = useMemo(() => {
+    const map = new Map<string, { rootIndex: number; color: string; pct: number }>();
+    for (const g of goals) {
+      const rootIndex = rootIndexOf(goals, g.id);
+      map.set(g.id, { rootIndex, color: branchColor(rootIndex), pct: progressOf(goals, g.id) });
+    }
+    return map;
+  }, [goals]);
 
   function fitView(depth = maxDepth) {
     const el = stageRef.current;
@@ -92,43 +112,53 @@ export function GoalMap() {
     setScale(ns);
   }
 
-  const lit = focusId ? [focusId, ...chainOf(goals, focusId).map((n) => n.id), ...descendantsOf(goals, focusId)] : null;
-  const isOn = (id: string) => !lit || lit.includes(id);
+  const litSet = useMemo(
+    () =>
+      focusId
+        ? new Set([focusId, ...chainOf(goals, focusId).map((n) => n.id), ...descendantsOf(goals, focusId)])
+        : null,
+    [focusId, goals]
+  );
+  const isOn = (id: string) => !litSet || litSet.has(id);
 
-  const edges = Object.keys(layout.pos)
-    .map((id) => {
-      const node = goals.find((g) => g.id === id)!;
-      if (!node.parent_id || !layout.pos[node.parent_id]) return null;
-      const a = layout.pos[node.parent_id];
-      const b = layout.pos[id];
-      const x1 = a.x + NODE_WIDTH_BY_DEPTH[a.depth];
-      const y1 = a.y;
-      const x2 = b.x;
-      const y2 = b.y;
-      const mid = x1 + (x2 - x1) * 0.5;
-      const p = progressOf(goals, id);
-      const color = branchColor(rootIndexOf(goals, id));
-      return {
-        id,
-        d: `M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`,
-        color,
-        width: p >= 0.999 ? 2.4 : 1.9,
-        dash: Math.max(0.001, p),
-        glow: p >= 0.999 ? `drop-shadow(0 0 5px ${color})` : p > 0 ? `drop-shadow(0 0 2px ${color})` : "none",
-        anim: justAddedId === id ? "drawIn 600ms ease" : "none",
-        opacity: isOn(id) ? 1 : 0.1,
-      };
-    })
-    .filter(Boolean) as {
-    id: string;
-    d: string;
-    color: string;
-    width: number;
-    dash: number;
-    glow: string;
-    anim: string;
-    opacity: number;
-  }[];
+  const edges = useMemo(
+    () =>
+      Object.keys(layout.pos)
+        .map((id) => {
+          const node = goalsById.get(id)!;
+          if (!node.parent_id || !layout.pos[node.parent_id]) return null;
+          const a = layout.pos[node.parent_id];
+          const b = layout.pos[id];
+          const x1 = a.x + NODE_WIDTH_BY_DEPTH[a.depth];
+          const y1 = a.y;
+          const x2 = b.x;
+          const y2 = b.y;
+          const mid = x1 + (x2 - x1) * 0.5;
+          const { pct: p, color } = nodeInfo.get(id)!;
+          return {
+            id,
+            d: `M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`,
+            color,
+            width: p >= 0.999 ? 2.4 : 1.9,
+            dash: Math.max(0.001, p),
+            glow: p >= 0.999 ? `drop-shadow(0 0 5px ${color})` : p > 0 ? `drop-shadow(0 0 2px ${color})` : "none",
+            anim: justAddedId === id ? "drawIn 600ms ease" : "none",
+            opacity: isOn(id) ? 1 : 0.1,
+          };
+        })
+        .filter(Boolean) as {
+        id: string;
+        d: string;
+        color: string;
+        width: number;
+        dash: number;
+        glow: string;
+        anim: string;
+        opacity: number;
+      }[],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [layout, goalsById, nodeInfo, justAddedId, litSet]
+  );
 
   return (
     <div className="flex-1 relative min-h-0">
@@ -173,10 +203,9 @@ export function GoalMap() {
           </svg>
 
           {Object.keys(layout.pos).map((id) => {
-            const n = goals.find((g) => g.id === id)!;
+            const n = goalsById.get(id)!;
             const p = layout.pos[id];
-            const color = branchColor(rootIndexOf(goals, id));
-            const pct = progressOf(goals, id);
+            const { color, pct } = nodeInfo.get(id)!;
             const isYear = n.level === "yearly";
             const kidsCut = p.depth === maxDepth;
             const w = NODE_WIDTH_BY_DEPTH[p.depth];

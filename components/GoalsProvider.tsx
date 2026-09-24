@@ -153,29 +153,39 @@ export function GoalsProvider({
 
   const toggleComplete = useCallback(
     async (id: string, completed: boolean) => {
+      const previous = goals.find((g) => g.id === id);
       // Only a *linked* task completing (not un-completing, not standalone)
       // earns the chain-lighting celebration — captured before the mutation
       // since a demo-mode local update wouldn't otherwise hand back parent_id.
-      const shouldCelebrate = completed && !!goals.find((g) => g.id === id)?.parent_id;
+      const shouldCelebrate = completed && !!previous?.parent_id;
 
-      if (demoMode) {
-        setGoals((prev) =>
-          prev.map((g) =>
-            g.id === id
-              ? {
-                  ...g,
-                  completed,
-                  completed_at: completed ? new Date().toISOString() : null,
-                  skipped_reason: completed ? null : g.skipped_reason,
-                  skipped_note: completed ? null : g.skipped_note,
-                  skipped_at: completed ? null : g.skipped_at,
-                }
-              : g
-          )
-        );
-      } else {
-        const updated = await setCompleted(id, completed);
-        upsert(updated);
+      // Optimistic in both modes: the checkbox reflects the change the
+      // instant it's tapped, not after a network round-trip. Real mode
+      // reconciles with the server's row below and rolls back on failure;
+      // demo mode has no server to reconcile with, so this *is* the update.
+      setGoals((prev) =>
+        prev.map((g) =>
+          g.id === id
+            ? {
+                ...g,
+                completed,
+                completed_at: completed ? new Date().toISOString() : null,
+                skipped_reason: completed ? null : g.skipped_reason,
+                skipped_note: completed ? null : g.skipped_note,
+                skipped_at: completed ? null : g.skipped_at,
+              }
+            : g
+        )
+      );
+
+      if (!demoMode) {
+        try {
+          const updated = await setCompleted(id, completed);
+          upsert(updated);
+        } catch (err) {
+          if (previous) upsert(previous);
+          throw err;
+        }
       }
 
       if (shouldCelebrate) {

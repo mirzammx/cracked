@@ -8,6 +8,7 @@ import {
   branchHue,
   chainOf,
   formatDateLabel,
+  HISTORY_WEEKS,
   lastNDates,
   periodScore,
   rootIndexOf,
@@ -17,7 +18,7 @@ import {
 import { sideBorder } from "@/lib/uiStyle";
 import { Goal } from "@/lib/types";
 
-const WEEKS = 20;
+const WEEKS = HISTORY_WEEKS;
 const DAY_ROW_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
