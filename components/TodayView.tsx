@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGoals } from "./GoalsProvider";
+import { TaskCheckbox } from "./TaskCheckbox";
+import { YesterdayCarryOver } from "./YesterdayCarryOver";
 import { branchColor, chainOf, findGoal, parentLevel, progressOf, rootIndexOf, todayISODate } from "@/lib/goals";
 import { sideBorder } from "@/lib/uiStyle";
 import { Goal, GoalLevel, LEVEL_LABEL } from "@/lib/types";
@@ -305,18 +307,7 @@ function TaskRow({
       onMouseLeave={() => onHover?.(null)}
     >
       {dangling ? <DanglingThread /> : null}
-      <button
-        onClick={onToggle}
-        className="flex-none w-[26px] h-[26px] mt-[1px] rounded-full text-[13px] flex items-center justify-center transition-all"
-        style={{
-          border: `1.5px solid ${goal.completed ? color : "#3a3a2e"}`,
-          background: goal.completed ? color : "transparent",
-          color: "#14140f",
-          boxShadow: goal.completed ? `0 0 16px -2px ${color}` : "none",
-        }}
-      >
-        {goal.completed ? "✓" : ""}
-      </button>
+      <TaskCheckbox completed={goal.completed} color={color} onClick={onToggle} />
       <div className="flex-1 min-w-0">
         {showBreadcrumb ? <Crumb goal={goal} goals={goals} pulsing={pulsing} /> : null}
         <div
@@ -521,6 +512,8 @@ export function TodayView() {
         ) : null}
 
         <ChainStrip goals={goals} activeId={activeId} pulsing={!!justCompletedId && activeId === justCompletedId} onOpenMap={openMap} />
+
+        <YesterdayCarryOver />
 
         {due.length === 0 ? (
           <div className="text-sm text-ink-dim">Nothing scheduled for today — attach a task from the map, or add a standalone one.</div>

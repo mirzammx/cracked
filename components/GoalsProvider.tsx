@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { Goal, GoalLevel, NewGoalInput } from "@/lib/types";
 import { matchesRecurrence, todayISODate } from "@/lib/goals";
 import {
+  carryGoalToToday,
   createGoal,
   deleteTemplate,
   reconsiderGoal,
@@ -36,6 +37,7 @@ interface GoalsContextValue {
   toggleComplete: (id: string, completed: boolean) => Promise<void>;
   confirmSkip: (id: string, reason: string, note: string) => Promise<void>;
   reconsider: (id: string) => Promise<void>;
+  carryToToday: (id: string) => Promise<void>;
   relink: (id: string, parentId: string | null) => Promise<void>;
   updateGoal: (id: string, patch: Partial<Pick<Goal, "title" | "why_note">>) => Promise<void>;
   editTemplate: (id: string, patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>) => Promise<void>;
@@ -242,6 +244,19 @@ export function GoalsProvider({
     [upsert, demoMode]
   );
 
+  const carryToToday = useCallback(
+    async (id: string) => {
+      const today = todayISODate();
+      if (demoMode) {
+        setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, scheduled_date: today } : g)));
+        return;
+      }
+      const updated = await carryGoalToToday(id);
+      upsert(updated);
+    },
+    [upsert, demoMode]
+  );
+
   const updateGoal = useCallback(
     async (id: string, patch: Partial<Pick<Goal, "title" | "why_note">>) => {
       if (demoMode) {
@@ -304,6 +319,7 @@ export function GoalsProvider({
       toggleComplete,
       confirmSkip,
       reconsider,
+      carryToToday,
       relink,
       updateGoal,
       editTemplate,
@@ -324,6 +340,7 @@ export function GoalsProvider({
       toggleComplete,
       confirmSkip,
       reconsider,
+      carryToToday,
       relink,
       updateGoal,
       editTemplate,

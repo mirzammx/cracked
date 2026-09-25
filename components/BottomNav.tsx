@@ -7,6 +7,7 @@ import { useGoals } from "./GoalsProvider";
 const TABS = [
   { href: "/map", label: "Map" },
   { href: "/today", label: "Today" },
+  { href: "/week", label: "Week" },
   { href: "/history", label: "History" },
 ];
 
@@ -32,7 +33,9 @@ export function BottomNav() {
         })}
       </div>
       <button
-        onClick={() => openNewGoal(pathname?.startsWith("/today") ? "daily" : "quarterly")}
+        onClick={() =>
+          openNewGoal(pathname?.startsWith("/today") || pathname?.startsWith("/week") ? "daily" : "quarterly")
+        }
         aria-label="New goal"
         className="flex-none w-[52px] h-[52px] rounded-full bg-ink-2 text-canvas text-[22px] leading-none"
         style={{ boxShadow: "0 8px 22px -8px rgba(0,0,0,0.7)" }}

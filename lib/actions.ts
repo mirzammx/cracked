@@ -113,6 +113,23 @@ export async function skipGoal(id: string, reason: string, note: string): Promis
   return data as Goal;
 }
 
+/** Explicit, user-initiated move of a leftover task onto today — the "carry
+ * to today" half of the Today-view prompt for yesterday's incomplete tasks.
+ * Never happens automatically, only in response to a tap. */
+export async function carryGoalToToday(id: string): Promise<Goal> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("goals")
+    .update({ scheduled_date: todayISODate() })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/today");
+  return data as Goal;
+}
+
 /** Manually moves a skipped goal back into the due-now set. */
 export async function reconsiderGoal(id: string): Promise<Goal> {
   const { supabase } = await requireUser();
