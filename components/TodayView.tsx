@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGoals } from "./GoalsProvider";
 import { TaskCheckbox } from "./TaskCheckbox";
+import { TodayFocusCard } from "./TodayFocusCard";
 import { YesterdayCarryOver } from "./YesterdayCarryOver";
-import { branchColor, chainOf, findGoal, parentLevel, progressOf, rootIndexOf, todayISODate } from "@/lib/goals";
+import { branchColor, chainOf, findGoal, parentLevel, rootIndexOf, todayISODate } from "@/lib/goals";
 import { sideBorder } from "@/lib/uiStyle";
 import { Goal, GoalLevel, LEVEL_LABEL } from "@/lib/types";
 
@@ -25,59 +26,6 @@ function Crumb({ goal, goals, pulsing }: { goal: Goal; goals: Goal[]; pulsing: b
         </span>
       ))}
     </div>
-  );
-}
-
-/** Small always-visible line above "Goal tasks" — the map's ambient "sliver"
- * inside Today: the active task's full chain to root, with the immediate
- * parent's live progress. Lighting up here (via justCompletedId) is the same
- * "small action moves a big goal" hit every time a linked task closes, not
- * just during onboarding. */
-function ChainStrip({
-  goals,
-  activeId,
-  pulsing,
-  onOpenMap,
-}: {
-  goals: Goal[];
-  activeId: string | null;
-  pulsing: boolean;
-  onOpenMap: (focusId: string) => void;
-}) {
-  const task = activeId ? findGoal(goals, activeId) : undefined;
-  if (!task) {
-    return (
-      <div className="mb-5 text-[11px] text-ink-ghost italic">Nothing linked to a goal today yet.</div>
-    );
-  }
-  const chain = chainOf(goals, task.id);
-  const color = branchColor(rootIndexOf(goals, task.id));
-  const parent = chain[chain.length - 1];
-  const pct = parent ? Math.round(progressOf(goals, parent.id) * 100) : null;
-
-  return (
-    <button
-      onClick={() => onOpenMap(parent?.id ?? task.id)}
-      className="mb-5 w-full text-left flex flex-wrap items-center gap-1 text-[11px]"
-    >
-      {chain.map((n, i) => (
-        <span
-          key={n.id}
-          className="whitespace-nowrap text-ink-faint"
-          style={{ color, animation: pulsing ? `chainPulse 900ms ease ${i * 140}ms` : undefined }}
-        >
-          {n.title}
-          <span className="text-ink-fog px-1">→</span>
-        </span>
-      ))}
-      <span
-        className="whitespace-nowrap text-ink-dim"
-        style={{ color, animation: pulsing ? `chainPulse 900ms ease ${chain.length * 140}ms` : undefined }}
-      >
-        {task.title}
-      </span>
-      {pct !== null ? <span className="ml-1 text-ink-ghost">· {pct}%</span> : null}
-    </button>
   );
 }
 
@@ -469,6 +417,10 @@ export function TodayView() {
       : hoveredId && goalTasks.some((g) => g.id === hoveredId)
         ? hoveredId
         : (goalTasks.find((g) => !g.completed)?.id ?? goalTasks[0]?.id ?? null);
+  const activeTask = activeId ? findGoal(goals, activeId) : undefined;
+
+  const skippedCount = due.filter((g) => !g.completed && g.skipped_reason).length;
+  const leftCount = due.length - done.length - skippedCount;
 
   function openMap(focusId: string) {
     setFocusId(focusId);
@@ -498,6 +450,20 @@ export function TodayView() {
           </button>
         </div>
 
+        {due.length > 0 ? (
+          <div className="flex items-center gap-[14px] text-[11px] mb-5 -mt-2">
+            <span className="text-ink-ghost tracking-[0.08em] uppercase">
+              Done <span className="text-ink-2 normal-case tracking-normal">{done.length}</span>
+            </span>
+            <span className="text-ink-ghost tracking-[0.08em] uppercase">
+              Left <span className="text-ink-2 normal-case tracking-normal">{leftCount}</span>
+            </span>
+            <span className="text-ink-ghost tracking-[0.08em] uppercase">
+              Skipped <span className="text-ink-2 normal-case tracking-normal">{skippedCount}</span>
+            </span>
+          </div>
+        ) : null}
+
         {!hasOwnYearlyGoal ? (
           <button
             onClick={openQuickStart}
@@ -511,7 +477,18 @@ export function TodayView() {
           <TeachingMoment goals={goals} task={exampleTaskToday} onOpenMap={openMap} />
         ) : null}
 
-        <ChainStrip goals={goals} activeId={activeId} pulsing={!!justCompletedId && activeId === justCompletedId} onOpenMap={openMap} />
+        {activeTask ? (
+          <TodayFocusCard
+            task={activeTask}
+            goals={goals}
+            pulsing={!!justCompletedId && activeId === justCompletedId}
+            onToggle={() => toggleComplete(activeTask.id, !activeTask.completed)}
+            onSkip={() => openSkip(activeTask.id)}
+            onOpenMap={openMap}
+          />
+        ) : (
+          <div className="mb-6 text-[11px] text-ink-ghost italic">Nothing linked to a goal today yet.</div>
+        )}
 
         <YesterdayCarryOver />
 
