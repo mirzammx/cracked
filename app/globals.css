@@ -60,6 +60,23 @@ a:hover {
     opacity: 1;
   }
 }
+/* Tap feedback on TaskCheckbox (Today, Week Board, sticky note) — a quick
+   overshoot-and-settle scale, restarted each tap via GoalsProvider-style
+   boolean state + timeout, not by remounting the element. */
+@keyframes checkBounce {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.28);
+  }
+  65% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 /* A linked task's completion "climbing" its chain toward the root goal —
    driven by GoalsProvider's justCompletedId, reused on every completion
    (not just onboarding). Staggered per chain segment via animation-delay. */

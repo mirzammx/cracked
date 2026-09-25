@@ -2,37 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useGoals } from "./GoalsProvider";
+import { TaskCheckbox } from "./TaskCheckbox";
 import { branchColor, rootIndexOf, todayISODate } from "@/lib/goals";
 
 const STORAGE_KEY = "cracked:stickyNoteExpanded";
-const SCRATCH_COLOR = "#767263"; // ink-faint
-
-function ScratchLine({ active }: { active: boolean }) {
-  return (
-    <svg
-      className="absolute left-0 top-1/2 w-full h-[2px] pointer-events-none"
-      style={{ transform: "translateY(-50%)" }}
-      viewBox="0 0 100 2"
-      preserveAspectRatio="none"
-    >
-      <line
-        x1="1"
-        y1="1"
-        x2="99"
-        y2="1"
-        stroke={SCRATCH_COLOR}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        pathLength={1}
-        style={{
-          strokeDasharray: 1,
-          strokeDashoffset: active ? 0 : 1,
-          transition: "stroke-dashoffset 420ms cubic-bezier(0.3,0.7,0.3,1)",
-        }}
-      />
-    </svg>
-  );
-}
 
 function ExpandIcon() {
   return (
@@ -143,39 +116,22 @@ export function StickyNote() {
       ) : (
         <div className="flex flex-col gap-[9px]">
           {due.map((g) => {
-            const dotColor = g.parent_id ? branchColor(rootIndexOf(goals, g.id)) : "#5b584c";
+            const color = g.parent_id ? branchColor(rootIndexOf(goals, g.id)) : "#5b584c";
             const pulsing = g.id === justCompletedId;
             return (
-              <button key={g.id} onClick={() => toggleComplete(g.id, !g.completed)} className="text-left flex items-start gap-[9px]">
-                <span className="flex-none flex flex-col items-center mt-[6px]">
-                  <span
-                    className="w-[6px] h-[6px] rounded-full"
-                    style={{
-                      background: dotColor,
-                      color: dotColor,
-                      opacity: g.parent_id ? 1 : 0.6,
-                      animation: pulsing ? "chainPulse 900ms ease" : undefined,
-                    }}
-                  />
-                  {/* Standalone task — a short dashed tail instead of a solid dot, echoing Today's dangling thread. */}
-                  {!g.parent_id ? (
-                    <span
-                      className="w-[1.5px] h-[8px] mt-[2px]"
-                      style={{
-                        background: "repeating-linear-gradient(to bottom, #5b584c 0, #5b584c 2px, transparent 2px, transparent 4px)",
-                        opacity: 0.5,
-                      }}
-                    />
-                  ) : null}
-                </span>
+              <div key={g.id} className="flex items-start gap-[9px]">
+                <TaskCheckbox completed={g.completed} color={color} onClick={() => toggleComplete(g.id, !g.completed)} />
                 <span
-                  className="relative inline-block text-[13px] leading-[1.3]"
-                  style={{ color: g.completed ? "#8f8a7a" : "#f2efe8" }}
+                  className="text-[13px] leading-tight mt-[6px]"
+                  style={{
+                    color: g.completed ? "#8f8a7a" : "#f2efe8",
+                    textDecoration: g.completed ? "line-through" : "none",
+                    animation: pulsing ? "chainPulse 900ms ease" : undefined,
+                  }}
                 >
                   {g.title}
-                  <ScratchLine active={g.completed} />
                 </span>
-              </button>
+              </div>
             );
           })}
         </div>
