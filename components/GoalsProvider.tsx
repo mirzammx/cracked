@@ -6,6 +6,7 @@ import { matchesRecurrence, todayISODate } from "@/lib/goals";
 import {
   carryGoalToToday,
   createGoal,
+  deleteGoal as deleteGoalAction,
   deleteTemplate,
   reconsiderGoal,
   relinkGoal,
@@ -38,6 +39,7 @@ interface GoalsContextValue {
   confirmSkip: (id: string, reason: string, note: string) => Promise<void>;
   reconsider: (id: string) => Promise<void>;
   carryToToday: (id: string) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
   relink: (id: string, parentId: string | null) => Promise<void>;
   updateGoal: (id: string, patch: Partial<Pick<Goal, "title" | "why_note">>) => Promise<void>;
   editTemplate: (id: string, patch: Partial<Pick<Goal, "title" | "why_note" | "recurrence_rule">>) => Promise<void>;
@@ -257,6 +259,18 @@ export function GoalsProvider({
     [upsert, demoMode]
   );
 
+  const deleteGoal = useCallback(
+    async (id: string) => {
+      if (demoMode) {
+        setGoals((prev) => prev.filter((g) => g.id !== id));
+        return;
+      }
+      await deleteGoalAction(id);
+      setGoals((prev) => prev.filter((g) => g.id !== id));
+    },
+    [demoMode]
+  );
+
   const updateGoal = useCallback(
     async (id: string, patch: Partial<Pick<Goal, "title" | "why_note">>) => {
       if (demoMode) {
@@ -320,6 +334,7 @@ export function GoalsProvider({
       confirmSkip,
       reconsider,
       carryToToday,
+      deleteGoal,
       relink,
       updateGoal,
       editTemplate,
@@ -341,6 +356,7 @@ export function GoalsProvider({
       confirmSkip,
       reconsider,
       carryToToday,
+      deleteGoal,
       relink,
       updateGoal,
       editTemplate,

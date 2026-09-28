@@ -130,6 +130,18 @@ export async function carryGoalToToday(id: string): Promise<Goal> {
   return data as Goal;
 }
 
+/** Deletes a daily-level task row outright. Only ever exposed on daily task
+ * cards (Day/Week/Month views) — the schema's level-order constraint
+ * guarantees a "daily" node can never have children, so there's nothing to
+ * cascade into. Goal-tree nodes (yearly/quarterly/monthly/weekly) aren't
+ * deletable from here. */
+export async function deleteGoal(id: string): Promise<void> {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from("goals").delete().eq("id", id).eq("level", "daily");
+  if (error) throw new Error(error.message);
+  revalidatePath("/today");
+}
+
 /** Manually moves a skipped goal back into the due-now set. */
 export async function reconsiderGoal(id: string): Promise<Goal> {
   const { supabase } = await requireUser();

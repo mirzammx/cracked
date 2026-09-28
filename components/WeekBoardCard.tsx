@@ -12,15 +12,24 @@ import { Goal } from "@/lib/types";
 export function WeekBoardCard({
   goal,
   goals,
+  showCarry,
   onToggle,
   onSkip,
   onReconsider,
+  onCarryToToday,
+  onDelete,
 }: {
   goal: Goal;
   goals: Goal[];
+  /** True when this card is on a past, non-today column — the carry-forward
+   * mechanic now lives here as a direct tap, replacing the old separate
+   * "yesterday's leftovers" prompt. */
+  showCarry: boolean;
   onToggle: () => void;
   onSkip: () => void;
   onReconsider: () => void;
+  onCarryToToday: () => void;
+  onDelete: () => void;
 }) {
   const color = goal.parent_id ? branchColor(rootIndexOf(goals, goal.id)) : "#5b584c";
   const skipped = !goal.completed && !!goal.skipped_reason;
@@ -47,12 +56,27 @@ export function WeekBoardCard({
             Skipped →
           </button>
         ) : null}
+        {showCarry && !goal.completed && !skipped ? (
+          <button
+            onClick={onCarryToToday}
+            className="mt-[6px] text-[10px] text-ink-faint underline decoration-dotted underline-offset-4"
+          >
+            → Today
+          </button>
+        ) : null}
       </div>
       {!goal.completed && !skipped ? (
         <button onClick={onSkip} className="flex-none text-[10px] text-ink-faint border border-border rounded-full px-2 py-1 mt-0.5">
           Skip
         </button>
       ) : null}
+      <button
+        onClick={onDelete}
+        aria-label="Delete task"
+        className="flex-none text-ink-faint hover:text-red-400 text-xs leading-none px-1 mt-0.5"
+      >
+        ✕
+      </button>
     </div>
   );
 }

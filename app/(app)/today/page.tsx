@@ -1,5 +1,5 @@
-import { TodayView } from "@/components/TodayView";
+import { CalendarView } from "@/components/CalendarView";
 
 export default function TodayPage() {
-  return <TodayView />;
+  return <CalendarView />;
 }

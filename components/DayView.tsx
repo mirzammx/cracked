@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useGoals } from "./GoalsProvider";
 import { TaskCheckbox } from "./TaskCheckbox";
 import { TodayFocusCard } from "./TodayFocusCard";
-import { YesterdayCarryOver } from "./YesterdayCarryOver";
-import { branchColor, chainOf, findGoal, parentLevel, rootIndexOf, todayISODate } from "@/lib/goals";
+import { branchColor, chainOf, findGoal, formatDateLabel, parentLevel, rootIndexOf, todayISODate } from "@/lib/goals";
 import { sideBorder } from "@/lib/uiStyle";
 import { Goal, GoalLevel, LEVEL_LABEL } from "@/lib/types";
 
@@ -220,6 +219,18 @@ function InlineGoalPicker({
   );
 }
 
+function DeleteButton({ onDelete }: { onDelete: () => void }) {
+  return (
+    <button
+      onClick={onDelete}
+      aria-label="Delete task"
+      className="flex-none text-ink-faint hover:text-red-400 text-sm leading-none px-1 mt-0.5"
+    >
+      ✕
+    </button>
+  );
+}
+
 function TaskRow({
   goal,
   goals,
@@ -227,6 +238,7 @@ function TaskRow({
   pulsing,
   onToggle,
   onSkip,
+  onDelete,
   onHover,
   linking,
   onStartLink,
@@ -239,6 +251,7 @@ function TaskRow({
   pulsing: boolean;
   onToggle: () => void;
   onSkip: () => void;
+  onDelete: () => void;
   onHover?: (id: string | null) => void;
   linking?: boolean;
   onStartLink?: () => void;
@@ -287,6 +300,7 @@ function TaskRow({
           Skip
         </button>
       ) : null}
+      <DeleteButton onDelete={onDelete} />
     </div>
   );
 }
@@ -296,11 +310,13 @@ function SkippedRow({
   goals,
   showBreadcrumb,
   onReconsider,
+  onDelete,
 }: {
   goal: Goal;
   goals: Goal[];
   showBreadcrumb: boolean;
   onReconsider: () => void;
+  onDelete: () => void;
 }) {
   const color = showBreadcrumb ? branchColor(rootIndexOf(goals, goal.id)) : "#5b584c";
   return (
@@ -322,6 +338,7 @@ function SkippedRow({
       <button onClick={onReconsider} className="flex-none text-xs text-ink-faint border border-border rounded-full px-3 py-1.5 mt-0.5">
         Reconsider
       </button>
+      <DeleteButton onDelete={onDelete} />
     </div>
   );
 }
@@ -336,6 +353,7 @@ function TaskSection({
   onToggle,
   onSkip,
   onReconsider,
+  onDelete,
   onHover,
   linkingId,
   onStartLink,
@@ -351,6 +369,7 @@ function TaskSection({
   onToggle: (id: string, completed: boolean) => void;
   onSkip: (id: string) => void;
   onReconsider: (id: string) => void;
+  onDelete: (id: string) => void;
   onHover?: (id: string | null) => void;
   linkingId?: string | null;
   onStartLink?: (id: string) => void;
@@ -375,6 +394,7 @@ function TaskSection({
           pulsing={g.id === justCompletedId}
           onToggle={() => onToggle(g.id, !g.completed)}
           onSkip={() => onSkip(g.id)}
+          onDelete={() => onDelete(g.id)}
           onHover={onHover}
           linking={linkingId === g.id}
           onStartLink={() => onStartLink?.(g.id)}
@@ -385,7 +405,14 @@ function TaskSection({
       {skipped.length ? (
         <div className="mt-1">
           {skipped.map((g) => (
-            <SkippedRow key={g.id} goal={g} goals={goals} showBreadcrumb={showBreadcrumb} onReconsider={() => onReconsider(g.id)} />
+            <SkippedRow
+              key={g.id}
+              goal={g}
+              goals={goals}
+              showBreadcrumb={showBreadcrumb}
+              onReconsider={() => onReconsider(g.id)}
+              onDelete={() => onDelete(g.id)}
+            />
           ))}
         </div>
       ) : null}
@@ -393,12 +420,12 @@ function TaskSection({
   );
 }
 
-export function TodayView() {
-  const { goals, toggleComplete, openSkip, reconsider, openRecurring, openQuickStart, relink, justCompletedId, setFocusId } =
+export function DayView({ date }: { date: string }) {
+  const { goals, toggleComplete, openSkip, reconsider, deleteGoal, openRecurring, openQuickStart, relink, justCompletedId, setFocusId } =
     useGoals();
   const router = useRouter();
-  const today = todayISODate();
-  const due = goals.filter((g) => g.level === "daily" && !g.is_template && g.scheduled_date === today);
+  const isToday = date === todayISODate();
+  const due = goals.filter((g) => g.level === "daily" && !g.is_template && g.scheduled_date === date);
   const goalTasks = due.filter((g) => g.parent_id !== null);
   const otherTasks = due.filter((g) => g.parent_id === null);
   const done = due.filter((g) => g.completed);
@@ -408,7 +435,7 @@ export function TodayView() {
 
   const hasCompletedExample = goals.some((g) => g.is_example && g.completed);
   const exampleTaskToday = goalTasks.find((g) => g.is_example && !g.completed);
-  const showTeachingMoment = !hasCompletedExample && !!exampleTaskToday;
+  const showTeachingMoment = isToday && !hasCompletedExample && !!exampleTaskToday;
   const hasOwnYearlyGoal = goals.some((g) => g.level === "yearly" && !g.is_example);
 
   const activeId: string | null =
@@ -417,7 +444,7 @@ export function TodayView() {
       : hoveredId && goalTasks.some((g) => g.id === hoveredId)
         ? hoveredId
         : (goalTasks.find((g) => !g.completed)?.id ?? goalTasks[0]?.id ?? null);
-  const activeTask = activeId ? findGoal(goals, activeId) : undefined;
+  const activeTask = isToday && activeId ? findGoal(goals, activeId) : undefined;
 
   const skippedCount = due.filter((g) => !g.completed && g.skipped_reason).length;
   const leftCount = due.length - done.length - skippedCount;
@@ -442,12 +469,14 @@ export function TodayView() {
               <span className="text-ink-fade">/{due.length}</span>
             </div>
             <div className="text-[13px] text-ink-dim leading-relaxed text-pretty">
-              closed today. Each one lights a line further up the map.
+              {isToday ? "closed today. Each one lights a line further up the map." : `closed ${formatDateLabel(date)}.`}
             </div>
           </div>
-          <button onClick={openRecurring} className="flex-none text-xs text-ink-faint underline decoration-dotted underline-offset-4">
-            Recurring →
-          </button>
+          {isToday ? (
+            <button onClick={openRecurring} className="flex-none text-xs text-ink-faint underline decoration-dotted underline-offset-4">
+              Recurring →
+            </button>
+          ) : null}
         </div>
 
         {due.length > 0 ? (
@@ -464,7 +493,7 @@ export function TodayView() {
           </div>
         ) : null}
 
-        {!hasOwnYearlyGoal ? (
+        {isToday && !hasOwnYearlyGoal ? (
           <button
             onClick={openQuickStart}
             className="mb-5 -mt-3 block text-[11px] text-ink-faint underline decoration-dotted underline-offset-4"
@@ -477,23 +506,27 @@ export function TodayView() {
           <TeachingMoment goals={goals} task={exampleTaskToday} onOpenMap={openMap} />
         ) : null}
 
-        {activeTask ? (
-          <TodayFocusCard
-            task={activeTask}
-            goals={goals}
-            pulsing={!!justCompletedId && activeId === justCompletedId}
-            onToggle={() => toggleComplete(activeTask.id, !activeTask.completed)}
-            onSkip={() => openSkip(activeTask.id)}
-            onOpenMap={openMap}
-          />
-        ) : (
-          <div className="mb-6 text-[11px] text-ink-ghost italic">Nothing linked to a goal today yet.</div>
-        )}
-
-        <YesterdayCarryOver />
+        {isToday ? (
+          activeTask ? (
+            <TodayFocusCard
+              task={activeTask}
+              goals={goals}
+              pulsing={!!justCompletedId && activeId === justCompletedId}
+              onToggle={() => toggleComplete(activeTask.id, !activeTask.completed)}
+              onSkip={() => openSkip(activeTask.id)}
+              onOpenMap={openMap}
+            />
+          ) : (
+            <div className="mb-6 text-[11px] text-ink-ghost italic">Nothing linked to a goal today yet.</div>
+          )
+        ) : null}
 
         {due.length === 0 ? (
-          <div className="text-sm text-ink-dim">Nothing scheduled for today — attach a task from the map, or add a standalone one.</div>
+          <div className="text-sm text-ink-dim">
+            {isToday
+              ? "Nothing scheduled for today — attach a task from the map, or add a standalone one."
+              : `Nothing scheduled for ${formatDateLabel(date)}.`}
+          </div>
         ) : null}
 
         <TaskSection
@@ -505,6 +538,7 @@ export function TodayView() {
           onToggle={toggleComplete}
           onSkip={openSkip}
           onReconsider={reconsider}
+          onDelete={deleteGoal}
           onHover={setHoveredId}
         />
         <TaskSection
@@ -517,6 +551,7 @@ export function TodayView() {
           onToggle={toggleComplete}
           onSkip={openSkip}
           onReconsider={reconsider}
+          onDelete={deleteGoal}
           linkingId={linkingId}
           onStartLink={setLinkingId}
           onCancelLink={() => setLinkingId(null)}
