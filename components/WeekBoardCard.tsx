@@ -1,6 +1,7 @@
 "use client";
 
 import { TaskCheckbox } from "./TaskCheckbox";
+import { useContextMenu } from "./ContextMenu";
 import { branchColor, rootIndexOf } from "@/lib/goals";
 import { sideBorder } from "@/lib/uiStyle";
 import { Goal } from "@/lib/types";
@@ -33,12 +34,15 @@ export function WeekBoardCard({
 }) {
   const color = goal.parent_id ? branchColor(rootIndexOf(goals, goal.id)) : "#5b584c";
   const skipped = !goal.completed && !!goal.skipped_reason;
+  const { openMenu, node: contextMenuNode } = useContextMenu();
 
   return (
     <div
       className="bg-card rounded-[11px] px-[11px] py-[10px] mb-[7px] flex gap-[9px] items-start"
       style={{ ...sideBorder("#2e2e25", color), opacity: skipped ? 0.7 : 1 }}
+      onContextMenu={(e) => openMenu(e, onDelete)}
     >
+      {contextMenuNode}
       {!skipped ? <TaskCheckbox completed={goal.completed} color={color} onClick={onToggle} /> : null}
       <div className="flex-1 min-w-0">
         <div

@@ -22,6 +22,28 @@ a:hover {
   color: oklch(0.82 0.1 155);
 }
 
+/* Thin, dark scrollbars matching the theme — the OS/browser default
+   renders as a stark light bar against this dark UI, most noticeable on
+   Week view's horizontal row and its per-day scroll lists. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a2e transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #3a3a2e;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #4a4740;
+}
+
 /* Raw keyframes for inline `animation` styles on SVG/canvas nodes (GoalMap),
    which Tailwind's class-based JIT scanner won't pick up on its own. */
 @keyframes riseIn {

@@ -20,7 +20,7 @@ export function branchHue(rootIndex: number, palette = "Signal") {
 }
 
 export function branchColor(rootIndex: number, palette = "Signal") {
-  return `oklch(0.74 0.13 ${branchHue(rootIndex, palette)})`;
+  return `oklch(0.78 0.19 ${branchHue(rootIndex, palette)})`;
 }
 
 export function childrenOf(goals: Goal[], id: string | null) {

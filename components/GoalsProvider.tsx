@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Goal, GoalLevel, NewGoalInput } from "@/lib/types";
-import { matchesRecurrence, todayISODate } from "@/lib/goals";
+import { matchesRecurrence, toISODate, todayISODate } from "@/lib/goals";
 import {
   carryGoalToToday,
   createGoal,
@@ -19,6 +19,7 @@ import {
 interface GoalsContextValue {
   goals: Goal[];
   demoMode: boolean;
+  streak: number;
   focusId: string | null;
   setFocusId: (id: string | null) => void;
   newGoalOpen: boolean;
@@ -70,14 +71,17 @@ function instantiate(template: Goal, today: string): Goal {
 
 export function GoalsProvider({
   initialGoals,
+  initialStreak = 0,
   demoMode = false,
   children,
 }: {
   initialGoals: Goal[];
+  initialStreak?: number;
   demoMode?: boolean;
   children: React.ReactNode;
 }) {
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
+  const [streak, setStreak] = useState(initialStreak);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [newGoalOpen, setNewGoalOpen] = useState(false);
   const [newGoalDefaultLevel, setNewGoalDefaultLevel] = useState<GoalLevel>("quarterly");
@@ -104,6 +108,27 @@ export function GoalsProvider({
       if (!toCreate.length) return prev;
       return [...prev, ...toCreate.map((t) => instantiate(t, today))];
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoMode]);
+
+  // Demo mode has no real user/auth to store streak metadata on, so it
+  // tracks "opened the app today" via localStorage instead — same
+  // consecutive-day logic ensureStreakUpdated() runs server-side for real
+  // accounts (lib/actions.ts).
+  useEffect(() => {
+    if (!demoMode) return;
+    const today = todayISODate();
+    const lastActive = window.localStorage.getItem("cracked:lastActiveDate");
+    const prevStreak = Number(window.localStorage.getItem("cracked:streakCount") ?? "0");
+    if (lastActive === today) {
+      setStreak(prevStreak || 1);
+      return;
+    }
+    const yesterday = toISODate(new Date(Date.now() - 86400000));
+    const nextStreak = lastActive === yesterday ? prevStreak + 1 : 1;
+    window.localStorage.setItem("cracked:lastActiveDate", today);
+    window.localStorage.setItem("cracked:streakCount", String(nextStreak));
+    setStreak(nextStreak);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoMode]);
 
@@ -311,6 +336,7 @@ export function GoalsProvider({
     () => ({
       goals,
       demoMode,
+      streak,
       focusId,
       setFocusId,
       newGoalOpen,
@@ -345,6 +371,7 @@ export function GoalsProvider({
     [
       goals,
       demoMode,
+      streak,
       focusId,
       newGoalOpen,
       newGoalDefaultLevel,

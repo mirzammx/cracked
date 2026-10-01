@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useGoals } from "./GoalsProvider";
 import { TaskCheckbox } from "./TaskCheckbox";
 import { TodayFocusCard } from "./TodayFocusCard";
+import { useContextMenu } from "./ContextMenu";
 import { branchColor, chainOf, findGoal, formatDateLabel, parentLevel, rootIndexOf, todayISODate } from "@/lib/goals";
 import { sideBorder } from "@/lib/uiStyle";
 import { Goal, GoalLevel, LEVEL_LABEL } from "@/lib/types";
@@ -260,13 +261,16 @@ function TaskRow({
 }) {
   const dangling = !showBreadcrumb;
   const color = showBreadcrumb ? branchColor(rootIndexOf(goals, goal.id)) : "#5b584c";
+  const { openMenu, node: contextMenuNode } = useContextMenu();
   return (
     <div
       className="bg-card rounded-[13px] px-[15px] py-[13px] mb-[9px] flex gap-[13px] items-start"
       style={sideBorder("#2e2e25", color)}
       onMouseEnter={() => onHover?.(goal.id)}
       onMouseLeave={() => onHover?.(null)}
+      onContextMenu={(e) => openMenu(e, onDelete)}
     >
+      {contextMenuNode}
       {dangling ? <DanglingThread /> : null}
       <TaskCheckbox completed={goal.completed} color={color} onClick={onToggle} />
       <div className="flex-1 min-w-0">
@@ -319,11 +323,14 @@ function SkippedRow({
   onDelete: () => void;
 }) {
   const color = showBreadcrumb ? branchColor(rootIndexOf(goals, goal.id)) : "#5b584c";
+  const { openMenu, node: contextMenuNode } = useContextMenu();
   return (
     <div
       className="rounded-[13px] px-[15px] py-[13px] mb-[9px] flex gap-[13px] items-start opacity-70"
       style={sideBorder("#2e2e25", color)}
+      onContextMenu={(e) => openMenu(e, onDelete)}
     >
+      {contextMenuNode}
       <div className="flex-1 min-w-0">
         {showBreadcrumb ? <Crumb goal={goal} goals={goals} pulsing={false} /> : null}
         <div className="text-[15px] leading-tight text-ink-dim">{goal.title}</div>

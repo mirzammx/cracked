@@ -105,6 +105,20 @@ export function NewGoalSheet() {
     }
   }
 
+  const taskTitleField = (
+    <>
+      <div className="mt-[18px] text-[10px] tracking-[0.12em] uppercase text-ink-ghost mb-[9px]">
+        {isDaily ? "Task" : "Title"}
+      </div>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder={isDaily ? "Stretch for 10 minutes" : "Run a half marathon"}
+        className="w-full h-[46px] rounded-xl border border-border-strong bg-canvas px-[13px] text-sm text-ink outline-none"
+      />
+    </>
+  );
+
   return (
     <Sheet open={newGoalOpen} onClose={close}>
       <div className="font-serif text-2xl text-ink-2">New goal</div>
@@ -128,6 +142,13 @@ export function NewGoalSheet() {
           );
         })}
       </div>
+
+      {/* Daily capture stays neat and minimal: the task itself comes right
+          after Horizon, everything else (goal link, recurrence, schedule,
+          why) is secondary detail below it. Every other level keeps its
+          original order, where Title sits near the end with the rest of
+          the goal's fields. */}
+      {isDaily ? taskTitleField : null}
 
       {level !== "yearly" ? (
         <>
@@ -180,7 +201,7 @@ export function NewGoalSheet() {
             <span className="text-sm text-ink">Make this recurring</span>
             <span
               className="w-9 h-5 rounded-full relative transition-colors"
-              style={{ background: isTemplate ? "oklch(0.74 0.13 155)" : "#33332a" }}
+              style={{ background: isTemplate ? "oklch(0.78 0.19 155)" : "#33332a" }}
             >
               <span
                 className="absolute top-[3px] w-[14px] h-[14px] rounded-full bg-white transition-all"
@@ -231,7 +252,7 @@ export function NewGoalSheet() {
                         onClick={() => toggleCustomDay(d.code)}
                         className="w-10 h-9 rounded-lg text-xs"
                         style={{
-                          border: `1px solid ${active ? "oklch(0.74 0.13 155)" : "#33332a"}`,
+                          border: `1px solid ${active ? "oklch(0.78 0.19 155)" : "#33332a"}`,
                           background: active ? "rgba(255,255,255,0.06)" : "transparent",
                           color: active ? "#f2efe8" : "#8f8a7a",
                         }}
@@ -260,13 +281,7 @@ export function NewGoalSheet() {
         </>
       ) : null}
 
-      <div className="mt-[18px] text-[10px] tracking-[0.12em] uppercase text-ink-ghost mb-[9px]">Title</div>
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Run a half marathon"
-        className="w-full h-[46px] rounded-xl border border-border-strong bg-canvas px-[13px] text-sm text-ink outline-none"
-      />
+      {!isDaily ? taskTitleField : null}
 
       <div className="mt-[18px] flex items-baseline justify-between mb-[9px]">
         <div className="text-[10px] tracking-[0.12em] uppercase text-ink-ghost">Why this matters</div>

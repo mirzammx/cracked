@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { matchesRecurrence, todayISODate } from "@/lib/goals";
+import { matchesRecurrence, toISODate, todayISODate } from "@/lib/goals";
 import { Goal, NewGoalInput } from "@/lib/types";
 
 async function requireUser() {
@@ -130,15 +130,16 @@ export async function carryGoalToToday(id: string): Promise<Goal> {
   return data as Goal;
 }
 
-/** Deletes a daily-level task row outright. Only ever exposed on daily task
- * cards (Day/Week/Month views) — the schema's level-order constraint
- * guarantees a "daily" node can never have children, so there's nothing to
- * cascade into. Goal-tree nodes (yearly/quarterly/monthly/weekly) aren't
- * deletable from here. */
+/** Deletes any goal/task row outright, no confirmation — exposed from the
+ * small ✕ on daily task cards (Day/Week views) and from right-click
+ * anywhere a node appears (Goal Map, its detail panel). RLS scopes this to
+ * the signed-in user's own rows; deleting a non-daily node cascades to its
+ * whole subtree per the schema's `parent_id ... on delete cascade`. */
 export async function deleteGoal(id: string): Promise<void> {
   const { supabase } = await requireUser();
-  const { error } = await supabase.from("goals").delete().eq("id", id).eq("level", "daily");
+  const { error } = await supabase.from("goals").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  revalidatePath("/map");
   revalidatePath("/today");
 }
 
@@ -240,6 +241,26 @@ export async function ensureTodaysInstances(): Promise<void> {
     }))
   );
   if (insertError) throw new Error(insertError.message);
+}
+
+/** Bumps the "opened the app today" streak — consecutive calendar days the
+ * user has had the app open at least once, not tied to task completion.
+ * Stored on the user's own auth metadata (same mechanism ensureOnboarded
+ * uses for `onboarded`, lib/onboarding.ts), so no schema migration.
+ * Idempotent per day: a second call today is a no-op. */
+export async function ensureStreakUpdated(): Promise<number> {
+  const { supabase, user } = await requireUser();
+  const today = todayISODate();
+  const lastActive = user.user_metadata?.last_active_date as string | undefined;
+  const prevStreak = (user.user_metadata?.streak_count as number | undefined) ?? 0;
+
+  if (lastActive === today) return prevStreak;
+
+  const yesterday = toISODate(new Date(Date.now() - 86400000));
+  const nextStreak = lastActive === yesterday ? prevStreak + 1 : 1;
+
+  await supabase.auth.updateUser({ data: { last_active_date: today, streak_count: nextStreak } });
+  return nextStreak;
 }
 
 export async function signOut() {

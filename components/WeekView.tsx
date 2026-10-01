@@ -34,9 +34,9 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
   const minWeekOffset = -Math.floor(HISTORY_WEEKS - 1);
 
   return (
-    <div className="flex-1 overflow-auto px-[22px] pb-6 pt-1 flex flex-col items-center">
-      <div className="w-full max-w-[900px]">
-        <div className="flex items-center justify-between py-2 pb-4">
+    <div className="flex-1 min-h-0 px-[22px] pb-4 pt-1 flex flex-col items-center">
+      <div className="w-full max-w-[900px] flex-1 min-h-0 flex flex-col">
+        <div className="flex-none flex items-center justify-between py-2 pb-4">
           <button
             onClick={() => setWeekOffset((w) => Math.max(minWeekOffset, w - 1))}
             disabled={weekOffset <= minWeekOffset}
@@ -55,7 +55,7 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
           </button>
         </div>
 
-        <div className="flex gap-[8px] sm:gap-[10px] overflow-x-auto pb-2">
+        <div className="flex-1 min-h-0 flex gap-[8px] sm:gap-[10px] overflow-x-auto pb-2">
           {days.map((day) => {
             const iso = toISODate(day);
             const isToday = iso === todayISO;
@@ -69,7 +69,7 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
             return (
               <div
                 key={iso}
-                className="flex-none w-[150px] sm:w-[210px] rounded-[13px] flex flex-col"
+                className="flex-none w-[150px] sm:w-[210px] h-full rounded-[13px] flex flex-col"
                 style={{
                   background: isToday ? "rgba(242,239,232,0.04)" : "transparent",
                   border: `1px solid ${isToday ? "#f2efe8" : "#2e2e25"}`,
@@ -77,7 +77,7 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
               >
                 <button
                   onClick={() => onZoomToDay(iso)}
-                  className="sticky top-0 px-3 py-2.5 text-center"
+                  className="flex-none px-3 py-2.5 text-center"
                   style={{ borderBottom: "1px solid #2e2e25" }}
                 >
                   <div className="text-[10px] tracking-[0.12em] uppercase" style={{ color: isToday ? "#f2efe8" : "#8f8a7a" }}>
@@ -87,7 +87,7 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
                     {MONTH_ABBR[day.getMonth()]} {day.getDate()}
                   </div>
                 </button>
-                <div className="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] p-2">
+                <div className="flex-1 min-h-0 overflow-y-auto p-2">
                   {ordered.length === 0 ? (
                     <div className="text-[11px] text-ink-ghost italic px-1 py-2">Nothing scheduled</div>
                   ) : (

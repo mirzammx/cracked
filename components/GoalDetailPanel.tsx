@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useGoals } from "./GoalsProvider";
+import { useContextMenu } from "./ContextMenu";
 import { branchColor, childrenOf, findGoal, formatDateLabel, horizonLabel, mapVisible, progressOf, rootIndexOf } from "@/lib/goals";
 
 export function GoalDetailPanel() {
-  const { goals: allGoals, focusId, setFocusId, toggleComplete, openSkip, reconsider, updateGoal } = useGoals();
+  const { goals: allGoals, focusId, setFocusId, toggleComplete, openSkip, reconsider, updateGoal, deleteGoal } = useGoals();
+  const { openMenu, node: contextMenuNode } = useContextMenu();
   // Recurring templates aren't map nodes, so they can't show up as
   // children here either — otherwise a weekly goal's "below" list would
   // include its own generator alongside the tasks it produces.
@@ -56,7 +58,16 @@ export function GoalDetailPanel() {
   }
 
   return (
-    <div className="absolute right-4 bottom-4 w-full max-w-[300px] max-h-[calc(100%-32px)] bg-card/95 border border-border-strong rounded-2xl backdrop-blur p-4 overflow-auto animate-fadeIn">
+    <>
+    <div
+      className="absolute right-4 bottom-4 w-full max-w-[300px] max-h-[calc(100%-32px)] bg-card/95 border border-border-strong rounded-2xl backdrop-blur p-4 overflow-auto animate-fadeIn"
+      onContextMenu={(e) =>
+        openMenu(e, () => {
+          setFocusId(null);
+          deleteGoal(node.id);
+        })
+      }
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="text-[9px] tracking-[0.12em] uppercase text-ink-ghost">{horizonLabel(node.level)}</div>
         <div className="flex items-center gap-3">
@@ -213,5 +224,7 @@ export function GoalDetailPanel() {
         </>
       )}
     </div>
+    {contextMenuNode}
+    </>
   );
 }

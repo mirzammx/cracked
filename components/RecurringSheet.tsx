@@ -60,7 +60,7 @@ function TemplateRow({ template, goals }: { template: Goal; goals: Goal[] }) {
               {chain.length ? chain.map((c) => c.title).join(" → ") : "Standalone"}
             </div>
             <div className="text-[14px] text-ink">{template.title}</div>
-            <div className="text-[11px] mt-[3px]" style={{ color: "oklch(0.74 0.13 155)" }}>
+            <div className="text-[11px] mt-[3px]" style={{ color: "oklch(0.78 0.19 155)" }}>
               {recurrenceLabel(template.recurrence_rule)}
             </div>
           </div>
@@ -126,7 +126,7 @@ function TemplateRow({ template, goals }: { template: Goal; goals: Goal[] }) {
                 onClick={() => toggleDay(d.code)}
                 className="w-9 h-8 rounded-lg text-[11px]"
                 style={{
-                  border: `1px solid ${active ? "oklch(0.74 0.13 155)" : "#33332a"}`,
+                  border: `1px solid ${active ? "oklch(0.78 0.19 155)" : "#33332a"}`,
                   background: active ? "rgba(255,255,255,0.06)" : "transparent",
                   color: active ? "#f2efe8" : "#8f8a7a",
                 }}

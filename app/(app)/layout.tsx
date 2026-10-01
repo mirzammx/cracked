@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
-import { ensureTodaysInstances } from "@/lib/actions";
+import { ensureStreakUpdated, ensureTodaysInstances } from "@/lib/actions";
 import { MOCK_GOALS } from "@/lib/mockGoals";
 import { HISTORY_WEEKS, toISODate } from "@/lib/goals";
 import { Goal } from "@/lib/types";
@@ -35,9 +35,10 @@ async function loadGoals(): Promise<Goal[]> {
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const goals = await loadGoals();
+  const streak = hasSupabaseEnv ? await ensureStreakUpdated() : 0;
 
   return (
-    <GoalsProvider initialGoals={goals} demoMode={!hasSupabaseEnv}>
+    <GoalsProvider initialGoals={goals} initialStreak={streak} demoMode={!hasSupabaseEnv}>
       <div
         className="min-h-screen flex flex-col relative overflow-hidden"
         style={{ background: "radial-gradient(120% 90% at 50% 0%, #22221a 0%, #14140f 70%)" }}

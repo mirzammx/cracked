@@ -7,7 +7,7 @@ import { useGoals } from "./GoalsProvider";
 import { Logo } from "./Logo";
 
 export function Header() {
-  const { goals, focusId, setFocusId, demoMode } = useGoals();
+  const { goals, focusId, setFocusId, demoMode, streak } = useGoals();
   const router = useRouter();
   const rs = roots(goals);
 
@@ -25,6 +25,11 @@ export function Header() {
           <div className="font-serif text-[25px] tracking-[-0.01em] text-ink-2">Cracked</div>
         </div>
         <div className="text-[10px] tracking-[0.14em] uppercase text-ink-ghost whitespace-nowrap">{today}</div>
+        {streak > 0 ? (
+          <div className="text-[10px] tracking-[0.1em] uppercase text-ink-dim whitespace-nowrap">
+            🔥 {streak} {streak === 1 ? "day" : "days"}
+          </div>
+        ) : null}
         {demoMode ? (
           <div className="text-[10px] tracking-[0.1em] uppercase text-amber/80 border border-amber/30 rounded-full px-2 py-[3px] whitespace-nowrap">
             Demo data

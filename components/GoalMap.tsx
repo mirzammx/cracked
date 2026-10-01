@@ -14,6 +14,7 @@ import {
 } from "@/lib/goals";
 import { useGoals } from "./GoalsProvider";
 import { GoalDetailPanel } from "./GoalDetailPanel";
+import { useContextMenu } from "./ContextMenu";
 import { sideBorder } from "@/lib/uiStyle";
 
 const DEPTH_OPTIONS = [
@@ -24,7 +25,8 @@ const DEPTH_OPTIONS = [
 ];
 
 export function GoalMap() {
-  const { goals: allGoals, focusId, setFocusId, justAddedId } = useGoals();
+  const { goals: allGoals, focusId, setFocusId, justAddedId, deleteGoal } = useGoals();
+  const { openMenu, node: contextMenuNode } = useContextMenu();
   // Recurring templates are generators, not real tasks — never map nodes.
   // Memoized because `allGoals` gets a new array reference on every
   // GoalsProvider update, and this filter/rebuild shouldn't repeat on
@@ -223,6 +225,12 @@ export function GoalMap() {
               <div
                 key={id}
                 onClick={() => setFocusId(active ? null : id)}
+                onContextMenu={(e) =>
+                  openMenu(e, () => {
+                    if (focusId === id) setFocusId(null);
+                    deleteGoal(id);
+                  })
+                }
                 style={{
                   position: "absolute",
                   left: p.x,
@@ -354,6 +362,7 @@ export function GoalMap() {
       </div>
 
       <GoalDetailPanel />
+      {contextMenuNode}
     </div>
   );
 }
