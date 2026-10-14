@@ -10,13 +10,13 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-const NO_DATA_COLOR = "#2a2a22";
+const NO_DATA_COLOR = "#252833";
 
 function cellColor(score: number, hue: number): string {
   // Floor kept well above NO_DATA_COLOR's lightness so a real 0%-score day
   // never gets mistaken for "nothing was scheduled" at a glance.
   const L = 0.32 + score * 0.4;
-  const C = 0.05 + score * 0.15;
+  const C = 0.08 + score * 0.18;
   return `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${hue})`;
 }
 
@@ -130,7 +130,7 @@ export function MonthView({ focusDate, onZoomToDay }: { focusDate: string; onZoo
                 className="aspect-square rounded-[8px] flex flex-col items-start justify-between p-1 sm:p-1.5"
                 style={{
                   background: bg,
-                  outline: isSelected ? "1.5px solid #f2efe8" : isToday ? "1.5px solid rgba(242,239,232,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                  outline: isSelected ? "1.5px solid #f5f6fa" : isToday ? "1.5px solid rgba(245,246,250,0.4)" : "1px solid rgba(255,255,255,0.05)",
                   outlineOffset: -1,
                   opacity: inMonth ? 1 : 0.35,
                 }}

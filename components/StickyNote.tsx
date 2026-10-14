@@ -116,7 +116,7 @@ export function StickyNote() {
       ) : (
         <div className="flex flex-col gap-[9px]">
           {due.map((g) => {
-            const color = g.parent_id ? branchColor(rootIndexOf(goals, g.id)) : "#5b584c";
+            const color = g.parent_id ? branchColor(rootIndexOf(goals, g.id)) : "#5f6577";
             const pulsing = g.id === justCompletedId;
             return (
               <div key={g.id} className="flex items-start gap-[9px]">
@@ -124,7 +124,7 @@ export function StickyNote() {
                 <span
                   className="text-[13px] leading-tight mt-[6px]"
                   style={{
-                    color: g.completed ? "#8f8a7a" : "#f2efe8",
+                    color: g.completed ? "#9aa0b2" : "#f5f6fa",
                     textDecoration: g.completed ? "line-through" : "none",
                     animation: pulsing ? "chainPulse 900ms ease" : undefined,
                   }}

@@ -60,7 +60,7 @@ function TemplateRow({ template, goals }: { template: Goal; goals: Goal[] }) {
               {chain.length ? chain.map((c) => c.title).join(" → ") : "Standalone"}
             </div>
             <div className="text-[14px] text-ink">{template.title}</div>
-            <div className="text-[11px] mt-[3px]" style={{ color: "oklch(0.78 0.19 155)" }}>
+            <div className="text-[11px] mt-[3px]" style={{ color: "oklch(0.8 0.22 155)" }}>
               {recurrenceLabel(template.recurrence_rule)}
             </div>
           </div>
@@ -96,9 +96,9 @@ function TemplateRow({ template, goals }: { template: Goal; goals: Goal[] }) {
             onClick={() => setMode(p.value)}
             className="rounded-full px-3 py-1.5 text-xs"
             style={{
-              border: `1px solid ${mode === p.value ? "#f2efe8" : "#33332a"}`,
-              background: mode === p.value ? "#f2efe8" : "transparent",
-              color: mode === p.value ? "#14140f" : "#b9b4a4",
+              border: `1px solid ${mode === p.value ? "#f5f6fa" : "#333746"}`,
+              background: mode === p.value ? "#f5f6fa" : "transparent",
+              color: mode === p.value ? "#0e0f13" : "#c3c7d4",
             }}
           >
             {p.label}
@@ -108,9 +108,9 @@ function TemplateRow({ template, goals }: { template: Goal; goals: Goal[] }) {
           onClick={() => setMode("custom")}
           className="rounded-full px-3 py-1.5 text-xs"
           style={{
-            border: `1px solid ${mode === "custom" ? "#f2efe8" : "#33332a"}`,
-            background: mode === "custom" ? "#f2efe8" : "transparent",
-            color: mode === "custom" ? "#14140f" : "#b9b4a4",
+            border: `1px solid ${mode === "custom" ? "#f5f6fa" : "#333746"}`,
+            background: mode === "custom" ? "#f5f6fa" : "transparent",
+            color: mode === "custom" ? "#0e0f13" : "#c3c7d4",
           }}
         >
           Custom
@@ -126,9 +126,9 @@ function TemplateRow({ template, goals }: { template: Goal; goals: Goal[] }) {
                 onClick={() => toggleDay(d.code)}
                 className="w-9 h-8 rounded-lg text-[11px]"
                 style={{
-                  border: `1px solid ${active ? "oklch(0.78 0.19 155)" : "#33332a"}`,
+                  border: `1px solid ${active ? "oklch(0.8 0.22 155)" : "#333746"}`,
                   background: active ? "rgba(255,255,255,0.06)" : "transparent",
-                  color: active ? "#f2efe8" : "#8f8a7a",
+                  color: active ? "#f5f6fa" : "#9aa0b2",
                 }}
               >
                 {d.label}

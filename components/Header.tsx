@@ -53,9 +53,9 @@ export function Header() {
               }}
               className="flex-none whitespace-nowrap flex items-center gap-[7px] rounded-full px-[11px] py-[6px] text-[11px] transition-all"
               style={{
-                border: `1px solid ${active ? color : "#2e2e25"}`,
-                background: active ? "rgba(255,255,255,0.06)" : "#1c1c16",
-                color: active ? "#f2efe8" : "#8f8a7a",
+                border: `1px solid ${active ? color : "#2a2d38"}`,
+                background: active ? "rgba(255,255,255,0.06)" : "#171920",
+                color: active ? "#f5f6fa" : "#9aa0b2",
               }}
             >
               <span

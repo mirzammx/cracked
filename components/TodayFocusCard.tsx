@@ -31,7 +31,7 @@ export function TodayFocusCard({
   return (
     <div
       className="mb-6 rounded-[16px] px-5 py-5"
-      style={{ background: "#1e1e17", border: `1px solid ${color}`, boxShadow: `0 10px 26px -14px ${color}` }}
+      style={{ background: "#1a1c24", border: `1px solid ${color}`, boxShadow: `0 10px 26px -14px ${color}` }}
     >
       <div className="text-[10px] tracking-[0.12em] uppercase text-ink-ghost mb-3">Up next</div>
 
@@ -58,7 +58,7 @@ export function TodayFocusCard({
         <div
           className="flex-1 min-w-0 text-[19px] leading-tight"
           style={{
-            color: task.completed ? "#7d7869" : "#f7f4ec",
+            color: task.completed ? "#868c9e" : "#ffffff",
             textDecoration: task.completed ? "line-through" : "none",
           }}
         >

@@ -47,9 +47,9 @@ export function SkipSheet() {
                   onClick={() => setReason(r)}
                   className="rounded-full px-[14px] py-[10px] text-sm transition-colors"
                   style={{
-                    border: `1px solid ${active ? "#f2efe8" : "#33332a"}`,
-                    background: active ? "#f2efe8" : "transparent",
-                    color: active ? "#14140f" : "#b9b4a4",
+                    border: `1px solid ${active ? "#f5f6fa" : "#333746"}`,
+                    background: active ? "#f5f6fa" : "transparent",
+                    color: active ? "#0e0f13" : "#c3c7d4",
                   }}
                 >
                   {r}

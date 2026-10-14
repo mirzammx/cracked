@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Every task, visibly connected to the goal it serves.",
     start_url: "/",
     display: "standalone",
-    background_color: "#14140f",
-    theme_color: "#14140f",
+    background_color: "#0e0f13",
+    theme_color: "#0e0f13",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },

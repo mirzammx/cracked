@@ -99,7 +99,7 @@ export function GoalDetailPanel() {
             onChange={(e) => setEditWhy(e.target.value)}
             placeholder="One line you'll believe on a bad day"
             className="w-full h-10 rounded-lg border bg-canvas px-3 text-xs text-ink outline-none"
-            style={{ borderColor: !whyRequired || editWhy.trim() ? "#33332a" : "#4d4433" }}
+            style={{ borderColor: !whyRequired || editWhy.trim() ? "#333746" : "#6b5a2e" }}
           />
           <div className="mt-3 flex gap-2">
             <button
@@ -175,7 +175,7 @@ export function GoalDetailPanel() {
                     }}
                     disabled={busy}
                     className="flex-1 h-11 rounded-full text-sm disabled:opacity-40"
-                    style={{ background: node.completed ? "transparent" : color, color: node.completed ? color : "#14140f", border: `1px solid ${color}` }}
+                    style={{ background: node.completed ? "transparent" : color, color: node.completed ? color : "#0e0f13", border: `1px solid ${color}` }}
                   >
                     {node.completed ? "Mark not done" : "Done"}
                   </button>

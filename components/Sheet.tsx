@@ -13,7 +13,7 @@ export function Sheet({
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-end animate-fadeIn"
-      style={{ background: "rgba(10,10,8,0.6)" }}
+      style={{ background: "rgba(8,9,12,0.6)" }}
     >
       <div className="flex-1 w-full" onClick={onClose} />
       <div

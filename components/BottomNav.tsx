@@ -23,7 +23,7 @@ export function BottomNav() {
               key={t.href}
               href={t.href}
               className="flex-1 h-11 rounded-full text-[13px] flex items-center justify-center transition-colors"
-              style={{ background: active ? "#f2efe8" : "transparent", color: active ? "#14140f" : "#8f8a7a" }}
+              style={{ background: active ? "#f5f6fa" : "transparent", color: active ? "#0e0f13" : "#9aa0b2" }}
             >
               {t.label}
             </Link>

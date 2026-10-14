@@ -133,8 +133,8 @@ export function NewGoalSheet() {
               onClick={() => pickLevel(l)}
               className="flex-1 h-[38px] rounded-[9px] text-xs transition-colors"
               style={{
-                background: active ? "#1e1e17" : "transparent",
-                color: active ? "#f2efe8" : "#6d6a5c",
+                background: active ? "#1a1c24" : "transparent",
+                color: active ? "#f5f6fa" : "#737a8c",
               }}
             >
               {LEVEL_LABEL[l]}
@@ -201,7 +201,7 @@ export function NewGoalSheet() {
             <span className="text-sm text-ink">Make this recurring</span>
             <span
               className="w-9 h-5 rounded-full relative transition-colors"
-              style={{ background: isTemplate ? "oklch(0.78 0.19 155)" : "#33332a" }}
+              style={{ background: isTemplate ? "oklch(0.8 0.22 155)" : "#333746" }}
             >
               <span
                 className="absolute top-[3px] w-[14px] h-[14px] rounded-full bg-white transition-all"
@@ -222,9 +222,9 @@ export function NewGoalSheet() {
                     onClick={() => setRecurrenceMode(p.value)}
                     className="rounded-full px-[13px] py-2 text-xs"
                     style={{
-                      border: `1px solid ${recurrenceMode === p.value ? "#f2efe8" : "#33332a"}`,
-                      background: recurrenceMode === p.value ? "#f2efe8" : "transparent",
-                      color: recurrenceMode === p.value ? "#14140f" : "#b9b4a4",
+                      border: `1px solid ${recurrenceMode === p.value ? "#f5f6fa" : "#333746"}`,
+                      background: recurrenceMode === p.value ? "#f5f6fa" : "transparent",
+                      color: recurrenceMode === p.value ? "#0e0f13" : "#c3c7d4",
                     }}
                   >
                     {p.label}
@@ -234,9 +234,9 @@ export function NewGoalSheet() {
                   onClick={() => setRecurrenceMode("custom")}
                   className="rounded-full px-[13px] py-2 text-xs"
                   style={{
-                    border: `1px solid ${recurrenceMode === "custom" ? "#f2efe8" : "#33332a"}`,
-                    background: recurrenceMode === "custom" ? "#f2efe8" : "transparent",
-                    color: recurrenceMode === "custom" ? "#14140f" : "#b9b4a4",
+                    border: `1px solid ${recurrenceMode === "custom" ? "#f5f6fa" : "#333746"}`,
+                    background: recurrenceMode === "custom" ? "#f5f6fa" : "transparent",
+                    color: recurrenceMode === "custom" ? "#0e0f13" : "#c3c7d4",
                   }}
                 >
                   Custom days
@@ -252,9 +252,9 @@ export function NewGoalSheet() {
                         onClick={() => toggleCustomDay(d.code)}
                         className="w-10 h-9 rounded-lg text-xs"
                         style={{
-                          border: `1px solid ${active ? "oklch(0.78 0.19 155)" : "#33332a"}`,
+                          border: `1px solid ${active ? "oklch(0.8 0.22 155)" : "#333746"}`,
                           background: active ? "rgba(255,255,255,0.06)" : "transparent",
-                          color: active ? "#f2efe8" : "#8f8a7a",
+                          color: active ? "#f5f6fa" : "#9aa0b2",
                         }}
                       >
                         {d.label}
@@ -292,7 +292,7 @@ export function NewGoalSheet() {
         onChange={(e) => setWhy(e.target.value)}
         placeholder="One line you'll believe on a bad day"
         className="w-full h-[46px] rounded-xl border bg-canvas px-[13px] text-sm text-ink outline-none"
-        style={{ borderColor: !whyRequired || why.trim() ? "#33332a" : "#4d4433" }}
+        style={{ borderColor: !whyRequired || why.trim() ? "#333746" : "#6b5a2e" }}
       />
 
       <button

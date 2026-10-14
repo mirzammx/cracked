@@ -38,7 +38,7 @@ export function CalendarView() {
                 key={z.key}
                 onClick={() => setZoom(z.key)}
                 className="min-w-[64px] h-[30px] rounded-full text-[11px] transition-colors"
-                style={{ background: active ? "#f2efe8" : "transparent", color: active ? "#14140f" : "#8f8a7a" }}
+                style={{ background: active ? "#f5f6fa" : "transparent", color: active ? "#0e0f13" : "#9aa0b2" }}
               >
                 {z.label}
               </button>
@@ -48,7 +48,11 @@ export function CalendarView() {
       </div>
 
       <div className="flex-1 min-h-0 relative">
-        <AnimatePresence>
+        {/* initial={false}: the first render must not start at opacity 0 —
+            otherwise the server-rendered page is invisible (a blank screen)
+            until the JS bundle has downloaded and hydrated. Only later
+            zoom switches animate. */}
+        <AnimatePresence initial={false}>
           <motion.div
             key={zoom}
             initial={{ opacity: 0, scale: 0.97 }}

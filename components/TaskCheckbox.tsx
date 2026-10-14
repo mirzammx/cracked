@@ -13,10 +13,13 @@ export function TaskCheckbox({
   completed,
   color,
   onClick,
+  sizeClassName = "w-[26px] h-[26px]",
 }: {
   completed: boolean;
   color: string;
   onClick: () => void;
+  /** Tailwind width/height classes — the Week Board's narrow columns use a smaller, responsive size. */
+  sizeClassName?: string;
 }) {
   const [bouncing, setBouncing] = useState(false);
 
@@ -30,9 +33,9 @@ export function TaskCheckbox({
     <button
       onClick={handleClick}
       aria-pressed={completed}
-      className="flex-none w-[26px] h-[26px] mt-[1px] rounded-full flex items-center justify-center transition-all"
+      className={`flex-none ${sizeClassName} mt-[1px] rounded-full flex items-center justify-center transition-all`}
       style={{
-        border: `1.5px solid ${completed ? color : "#3a3a2e"}`,
+        border: `1.5px solid ${completed ? color : "#3b3f4f"}`,
         background: completed ? color : "transparent",
         boxShadow: completed ? `0 0 16px -2px ${color}` : "none",
         animation: bouncing ? "checkBounce 340ms cubic-bezier(0.34,1.56,0.64,1)" : "none",
@@ -42,7 +45,7 @@ export function TaskCheckbox({
         <path
           d="M2.6 6.8 L5.3 9.4 L10.3 3.6"
           fill="none"
-          stroke="#14140f"
+          stroke="#0e0f13"
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"

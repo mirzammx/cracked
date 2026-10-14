@@ -34,8 +34,8 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
   const minWeekOffset = -Math.floor(HISTORY_WEEKS - 1);
 
   return (
-    <div className="flex-1 min-h-0 px-[22px] pb-4 pt-1 flex flex-col items-center">
-      <div className="w-full max-w-[900px] flex-1 min-h-0 flex flex-col">
+    <div className="flex-1 min-h-0 px-2 sm:px-[22px] pb-4 pt-1 flex flex-col items-center">
+      <div className="w-full max-w-[1100px] flex-1 min-h-0 flex flex-col">
         <div className="flex-none flex items-center justify-between py-2 pb-4">
           <button
             onClick={() => setWeekOffset((w) => Math.max(minWeekOffset, w - 1))}
@@ -55,7 +55,9 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 flex gap-[8px] sm:gap-[10px] overflow-x-auto pb-2">
+        {/* All seven days share one frame — equal-width grid columns that
+            shrink to fit the viewport, never a horizontal scroller. */}
+        <div className="flex-1 min-h-0 grid grid-cols-7 gap-[3px] sm:gap-[10px] pb-2">
           {days.map((day) => {
             const iso = toISODate(day);
             const isToday = iso === todayISO;
@@ -69,27 +71,34 @@ export function WeekView({ focusDate, onZoomToDay }: { focusDate: string; onZoom
             return (
               <div
                 key={iso}
-                className="flex-none w-[150px] sm:w-[210px] h-full rounded-[13px] flex flex-col"
+                className="min-w-0 min-h-0 rounded-[10px] sm:rounded-[13px] flex flex-col overflow-hidden"
                 style={{
-                  background: isToday ? "rgba(242,239,232,0.04)" : "transparent",
-                  border: `1px solid ${isToday ? "#f2efe8" : "#2e2e25"}`,
+                  background: isToday ? "rgba(245,246,250,0.04)" : "transparent",
+                  border: `1px solid ${isToday ? "#f5f6fa" : "#2a2d38"}`,
                 }}
               >
                 <button
                   onClick={() => onZoomToDay(iso)}
-                  className="flex-none px-3 py-2.5 text-center"
-                  style={{ borderBottom: "1px solid #2e2e25" }}
+                  className="flex-none px-0.5 sm:px-3 py-2 sm:py-2.5 text-center"
+                  style={{ borderBottom: "1px solid #2a2d38" }}
                 >
-                  <div className="text-[10px] tracking-[0.12em] uppercase" style={{ color: isToday ? "#f2efe8" : "#8f8a7a" }}>
+                  <div
+                    className="text-[9px] sm:text-[10px] tracking-[0.04em] sm:tracking-[0.12em] uppercase"
+                    style={{ color: isToday ? "#f5f6fa" : "#9aa0b2" }}
+                  >
                     {DAY_LABELS[day.getDay()]}
                   </div>
-                  <div className="text-[13px] text-ink-dim">
-                    {MONTH_ABBR[day.getMonth()]} {day.getDate()}
+                  <div className="text-[12px] sm:text-[13px] text-ink-dim">
+                    <span className="hidden sm:inline">{MONTH_ABBR[day.getMonth()]} </span>
+                    {day.getDate()}
                   </div>
                 </button>
-                <div className="flex-1 min-h-0 overflow-y-auto p-2">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-0.5 sm:p-2">
                   {ordered.length === 0 ? (
-                    <div className="text-[11px] text-ink-ghost italic px-1 py-2">Nothing scheduled</div>
+                    <div className="text-[11px] text-ink-ghost italic px-1 py-2 text-center sm:text-left">
+                      <span className="sm:hidden">—</span>
+                      <span className="hidden sm:inline">Nothing scheduled</span>
+                    </div>
                   ) : (
                     ordered.map((g) => (
                       <WeekBoardCard

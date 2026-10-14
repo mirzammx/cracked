@@ -91,7 +91,7 @@ export function QuickStartSheet() {
             onChange={(e) => setYearWhy(e.target.value)}
             placeholder="One line you'll believe on a bad day"
             className="w-full h-[46px] rounded-xl border bg-canvas px-[13px] text-sm text-ink outline-none"
-            style={{ borderColor: yearWhy.trim() ? "#33332a" : "#4d4433" }}
+            style={{ borderColor: yearWhy.trim() ? "#333746" : "#6b5a2e" }}
           />
 
           <button

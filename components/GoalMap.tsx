@@ -185,7 +185,7 @@ export function GoalMap() {
           <svg width={layout.width} height={layout.height} className="absolute left-0 top-0 overflow-visible">
             {edges.map((e) => (
               <g key={e.id} style={{ opacity: e.opacity, transition: "opacity 300ms ease" }}>
-                <path d={e.d} fill="none" stroke="#3a3a2e" strokeWidth={1.5} strokeLinecap="round" />
+                <path d={e.d} fill="none" stroke="#3b3f4f" strokeWidth={1.5} strokeLinecap="round" />
                 <path
                   d={e.d}
                   fill="none"
@@ -238,8 +238,8 @@ export function GoalMap() {
                   width: w,
                   transform: "translateY(-50%)",
                   opacity: isOn(id) ? 1 : 0.16,
-                  background: isYear ? color : "#1e1e17",
-                  ...sideBorder(active ? color : isYear ? "transparent" : "#2e2e25", color),
+                  background: isYear ? color : "#1a1c24",
+                  ...sideBorder(active ? color : isYear ? "transparent" : "#2a2d38", color),
                   borderRadius: 12,
                   padding: isYear ? "11px 13px" : "10px 12px",
                   cursor: "pointer",
@@ -263,7 +263,7 @@ export function GoalMap() {
                           cy={19}
                           r={15.5}
                           fill="none"
-                          stroke="#14140f"
+                          stroke="#0e0f13"
                           strokeWidth={3}
                           strokeLinecap="round"
                           pathLength={1}
@@ -271,7 +271,7 @@ export function GoalMap() {
                           style={{ transition: "stroke-dasharray 700ms cubic-bezier(0.3,0.8,0.3,1)" }}
                         />
                       </svg>
-                      <div className="absolute inset-0 flex items-center justify-center text-[10px]" style={{ color: "#14140f" }}>
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px]" style={{ color: "#0e0f13" }}>
                         {Math.round(pct * 100)}%
                       </div>
                     </div>
@@ -280,12 +280,12 @@ export function GoalMap() {
                     <div className="flex items-baseline gap-[6px]">
                       <div
                         className="text-[8px] tracking-[0.12em] uppercase"
-                        style={{ color: isYear ? "rgba(20,20,15,0.62)" : "#6d6a5c" }}
+                        style={{ color: isYear ? "rgba(14,15,19,0.62)" : "#737a8c" }}
                       >
                         {kidsCut ? `${horizonLabel(n.level)} · below` : horizonLabel(n.level)}
                       </div>
                       {!isYear ? (
-                        <div className="text-[10px]" style={{ color: "#6d6a5c" }}>
+                        <div className="text-[10px]" style={{ color: "#737a8c" }}>
                           {flatPct}
                         </div>
                       ) : null}
@@ -295,7 +295,7 @@ export function GoalMap() {
                       style={{
                         fontSize: isYear ? 17 : p.depth === 1 ? 14 : 13,
                         letterSpacing: "-0.01em",
-                        color: isYear ? "#14140f" : n.completed || n.skipped_reason ? "#7d7869" : "#eeebe2",
+                        color: isYear ? "#0e0f13" : n.completed || n.skipped_reason ? "#868c9e" : "#eef0f6",
                         fontFamily: isYear ? "var(--font-instrument-serif), Georgia, serif" : "inherit",
                         textDecoration: n.completed ? "line-through" : "none",
                       }}
@@ -333,7 +333,7 @@ export function GoalMap() {
                 requestAnimationFrame(() => fitView(o.d));
               }}
               className="min-w-[38px] h-[30px] rounded-full text-[11px] transition-colors"
-              style={{ background: maxDepth === o.d ? "#f2efe8" : "transparent", color: maxDepth === o.d ? "#14140f" : "#8f8a7a" }}
+              style={{ background: maxDepth === o.d ? "#f5f6fa" : "transparent", color: maxDepth === o.d ? "#0e0f13" : "#9aa0b2" }}
             >
               {o.label}
             </button>

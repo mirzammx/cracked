@@ -64,9 +64,9 @@ function TeachingMoment({ goals, task, onOpenMap }: { goals: Goal[]; task: Goal;
 function DanglingThread() {
   return (
     <svg width="14" height="26" viewBox="0 0 14 26" className="flex-none mt-[7px]" aria-hidden>
-      <line x1="7" y1="0" x2="7" y2="7" stroke="#5b584c" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-      <line x1="7" y1="10" x2="7" y2="15" stroke="#5b584c" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-      <line x1="7" y1="18" x2="7" y2="21" stroke="#5b584c" strokeWidth="1.5" strokeLinecap="round" opacity="0.2" />
+      <line x1="7" y1="0" x2="7" y2="7" stroke="#5f6577" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+      <line x1="7" y1="10" x2="7" y2="15" stroke="#5f6577" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+      <line x1="7" y1="18" x2="7" y2="21" stroke="#5f6577" strokeWidth="1.5" strokeLinecap="round" opacity="0.2" />
     </svg>
   );
 }
@@ -151,7 +151,7 @@ function InlineGoalCreator({
         onChange={(e) => setWhy(e.target.value)}
         placeholder={whyRequired ? "Why this matters" : "Why this matters (optional)"}
         className="h-9 rounded-lg border bg-canvas px-2 text-xs text-ink outline-none"
-        style={{ borderColor: !whyRequired || why.trim() ? "#33332a" : "#4d4433" }}
+        style={{ borderColor: !whyRequired || why.trim() ? "#333746" : "#6b5a2e" }}
       />
       <div className="flex gap-2">
         <button
@@ -260,12 +260,12 @@ function TaskRow({
   onPickParent?: (parentId: string) => void;
 }) {
   const dangling = !showBreadcrumb;
-  const color = showBreadcrumb ? branchColor(rootIndexOf(goals, goal.id)) : "#5b584c";
+  const color = showBreadcrumb ? branchColor(rootIndexOf(goals, goal.id)) : "#5f6577";
   const { openMenu, node: contextMenuNode } = useContextMenu();
   return (
     <div
       className="bg-card rounded-[13px] px-[15px] py-[13px] mb-[9px] flex gap-[13px] items-start"
-      style={sideBorder("#2e2e25", color)}
+      style={sideBorder("#2a2d38", color)}
       onMouseEnter={() => onHover?.(goal.id)}
       onMouseLeave={() => onHover?.(null)}
       onContextMenu={(e) => openMenu(e, onDelete)}
@@ -277,7 +277,7 @@ function TaskRow({
         {showBreadcrumb ? <Crumb goal={goal} goals={goals} pulsing={pulsing} /> : null}
         <div
           className="text-[15px] leading-tight"
-          style={{ color: goal.completed ? "#7d7869" : "#f2efe8", textDecoration: goal.completed ? "line-through" : "none" }}
+          style={{ color: goal.completed ? "#868c9e" : "#f5f6fa", textDecoration: goal.completed ? "line-through" : "none" }}
         >
           {goal.title}
         </div>
@@ -322,12 +322,12 @@ function SkippedRow({
   onReconsider: () => void;
   onDelete: () => void;
 }) {
-  const color = showBreadcrumb ? branchColor(rootIndexOf(goals, goal.id)) : "#5b584c";
+  const color = showBreadcrumb ? branchColor(rootIndexOf(goals, goal.id)) : "#5f6577";
   const { openMenu, node: contextMenuNode } = useContextMenu();
   return (
     <div
       className="rounded-[13px] px-[15px] py-[13px] mb-[9px] flex gap-[13px] items-start opacity-70"
-      style={sideBorder("#2e2e25", color)}
+      style={sideBorder("#2a2d38", color)}
       onContextMenu={(e) => openMenu(e, onDelete)}
     >
       {contextMenuNode}
@@ -336,7 +336,7 @@ function SkippedRow({
         <div className="text-[15px] leading-tight text-ink-dim">{goal.title}</div>
         <div
           className="mt-[7px] text-[11px] rounded-[7px] px-2 py-1 inline-block"
-          style={{ color: "#c9a86a", background: "rgba(201,168,106,0.1)" }}
+          style={{ color: "#f5b942", background: "rgba(245,185,66,0.12)" }}
         >
           Skipped — {goal.skipped_reason}
           {goal.skipped_note ? `: ${goal.skipped_note}` : ""}
